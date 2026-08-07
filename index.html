@@ -821,18 +821,33 @@
             const resiSukses = activePackages.filter(p => p.status === 'sukses');
             const resiGagal = activePackages.filter(p => p.status === 'gagal');
 
-            // Format WA Text
-            let text = `*LAPORAN PENGANTARAN LOGISFAST*\n📅 ${tgl}\n\n`;
-            text += `*INFO OPERASIONAL*\n🏢 Staging: ${currentUser.staging}\n🚚 Unit: ${unit} (${nopol})\n🔄 Ritase: Ke-${rit}\n⏰ Waktu: ${jMulai} - ${jSelesai} (Durasi: ${durasi})\n👥 Tim: ${driver} (Drv) & ${asisten} (Ast)\n👤 Leader: ${currentUser.name}\n\n`;
-            text += `*RINGKASAN PAKET*\n📦 Total Bawa: ${activePackages.length}\n✅ Sukses: ${resiSukses.length}\n❌ Gagal/Retur: ${resiGagal.length}\n\n`;
+            // Format WA Text (Perbaikan Formatting supaya rapi di WhatsApp)
+            let text = `*LAPORAN PENGANTARAN LOGISFAST*\n`;
+            text += `📅 Tanggal      : ${tgl}\n\n`;
+            
+            text += `*INFO OPERASIONAL*\n`;
+            text += `🏢 Staging      : ${currentUser.staging}\n`;
+            text += `🚚 Unit         : ${unit} (${nopol})\n`;
+            text += `🔄 Ritase       : Ke-${rit}\n`;
+            text += `⏰ Waktu        : ${jMulai} - ${jSelesai} (Durasi: ${durasi})\n`;
+            text += `👥 Driver       : ${driver}\n`;
+            text += `👥 Asisten      : ${asisten}\n`;
+            text += `👤 Leader       : ${currentUser.name}\n\n`;
+            
+            text += `*RINGKASAN PAKET*\n`;
+            text += `📦 Total Bawa   : ${activePackages.length}\n`;
+            text += `✅ Sukses       : ${resiSukses.length}\n`;
+            text += `❌ Gagal        : ${resiGagal.length}\n\n`;
             
             if(resiSukses.length > 0) { 
-                text += `*DETAIL SUKSES (${resiSukses.length})*\n${resiSukses.map((p,i) => `${i+1}. ${p.resi}`).join('\n')}\n\n`; 
+                text += `*DETAIL SUKSES (${resiSukses.length})*\n`;
+                text += resiSukses.map((p,i) => `${i+1}. ${p.resi}`).join('\n') + `\n\n`; 
             }
             if(resiGagal.length > 0) { 
-                text += `*DETAIL GAGAL & KENDALA (${resiGagal.length})*\n${resiGagal.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n')}\n\n`;
+                text += `*DETAIL GAGAL (${resiGagal.length})*\n`;
+                text += resiGagal.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n') + `\n\n`;
             }
-            text += `_Generated via Sistem LogisFast_`;
+            text += `_Sistem LogisFast_`;
 
             document.getElementById('modal-report-output').value = text;
 
@@ -893,17 +908,33 @@
             const t = dashboardTrips.find(x => x.id === id);
             if(!t) return;
             
-            let text = `*LAPORAN PENGANTARAN BP*\n📅 ${t.date}\n\n`;
-            text += `*INFO OPERASIONAL*\n🏢 Staging: ${t.staging}\n🚚 Unit: ${t.unit} (${t.nopol})\n🔄 Ritase: Ke-${t.rit}\n⏰ Waktu: ${t.jamMulai} - ${t.jamSelesai} (Durasi: ${t.durasi})\n👥 Tim: ${t.driver} (Drv) & ${t.asisten} (Ast)\n👤 Leader: ${t.leaderName}\n\n`;
-            text += `*RINGKASAN PAKET*\n📦 Total Bawa: ${t.total}\n✅ Sukses: ${t.sukses}\n❌ Gagal/Retur: ${t.gagal}\n\n`;
+            // Format WA Text (Perbaikan Formatting supaya rapi di WhatsApp)
+            let text = `*LAPORAN PENGANTARAN LOGISFAST*\n`;
+            text += `📅 Tanggal      : ${t.date}\n\n`;
+            
+            text += `*INFO OPERASIONAL*\n`;
+            text += `🏢 Staging      : ${t.staging}\n`;
+            text += `🚚 Unit         : ${t.unit} (${t.nopol})\n`;
+            text += `🔄 Ritase       : Ke-${t.rit}\n`;
+            text += `⏰ Waktu        : ${t.jamMulai} - ${t.jamSelesai} (Durasi: ${t.durasi})\n`;
+            text += `👥 Driver       : ${t.driver}\n`;
+            text += `👥 Asisten      : ${t.asisten}\n`;
+            text += `👤 Leader       : ${t.leaderName}\n\n`;
+            
+            text += `*RINGKASAN PAKET*\n`;
+            text += `📦 Total Bawa   : ${t.total}\n`;
+            text += `✅ Sukses       : ${t.sukses}\n`;
+            text += `❌ Gagal        : ${t.gagal}\n\n`;
             
             if(t.detailSukses && t.detailSukses.length > 0) {
-                text += `*DETAIL SUKSES (${t.detailSukses.length})*\n${t.detailSukses.map((resi,i) => `${i+1}. ${resi}`).join('\n')}\n\n`; 
+                text += `*DETAIL SUKSES (${t.detailSukses.length})*\n`;
+                text += t.detailSukses.map((resi,i) => `${i+1}. ${resi}`).join('\n') + `\n\n`; 
             }
             if(t.detailGagal && t.detailGagal.length > 0) {
-                text += `*DETAIL GAGAL & KENDALA (${t.detailGagal.length})*\n${t.detailGagal.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n')}\n\n`;
+                text += `*DETAIL GAGAL (${t.detailGagal.length})*\n`;
+                text += t.detailGagal.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n') + `\n\n`;
             }
-            text += `_Generated via Sistem LogisFast https://bp-staging-orcin.vercel.app/_`;
+            text += `_Sistem LogisFast https://bp-staging-orcin.vercel.app/_`;
 
             const el = document.createElement('textarea');
             el.value = text;
