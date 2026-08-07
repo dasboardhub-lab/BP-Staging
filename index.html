@@ -261,6 +261,11 @@
                             <p class="text-sm text-slate-500">Pantau operasional dan utilisasi armada.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl px-2 py-2.5">
+                                <select id="filter-staging" onchange="processAndRenderDashboard()" class="bg-transparent text-sm font-semibold outline-none w-full sm:w-auto cursor-pointer">
+                                    <option value="ALL">Semua Staging</option>
+                                </select>
+                            </div>
                             <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2">
                                 <input type="date" id="filter-date-start" onchange="renderDashboardData()" class="w-full sm:w-auto px-2 py-2.5 bg-transparent text-sm font-semibold outline-none">
                                 <span class="text-slate-400 font-bold">-</span>
@@ -313,6 +318,7 @@
                             <table class="w-full text-left text-sm text-slate-600">
                                 <thead class="bg-slate-50 text-slate-800 font-semibold border-b border-slate-200">
                                     <tr>
+                                        <th class="px-4 py-3 whitespace-nowrap">Tanggal</th>
                                         <th class="px-4 py-3 whitespace-nowrap">Waktu Submit</th>
                                         <th class="px-4 py-3 whitespace-nowrap">Staging & Leader</th>
                                         <th class="px-4 py-3 min-w-[200px]">Info Trip & Durasi</th>
@@ -465,6 +471,20 @@
                         <div><label class="block text-xs font-bold text-green-600 mb-1">Total Sukses</label><input type="number" id="edit-sukses" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-green-600"></div>
                         <div><label class="block text-xs font-bold text-red-600 mb-1">Total Gagal</label><input type="number" id="edit-gagal" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-red-600"></div>
                     </div>
+
+                    <!-- Area Tambahan: Edit Resi Manual -->
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-green-600 mb-1">Detail Resi Sukses (1 baris = 1 resi)</label>
+                            <textarea id="edit-detail-sukses" oninput="recalculateEditMetrics()" class="w-full h-32 bg-slate-50 border border-green-200 rounded-xl px-4 py-2 text-sm font-mono outline-none resize-none focus:ring-2 focus:ring-green-500" placeholder="RESI001\nRESI002"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-red-600 mb-1">Detail Resi Gagal (Format: RESI - Alasan)</label>
+                            <textarea id="edit-detail-gagal" oninput="recalculateEditMetrics()" class="w-full h-32 bg-slate-50 border border-red-200 rounded-xl px-4 py-2 text-sm font-mono outline-none resize-none focus:ring-2 focus:ring-red-500" placeholder="RESI003 - Toko Tutup\nRESI004 - Alamat Tidak Ditemukan"></textarea>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-500 italic">*Penting: Menambah/menghapus baris resi di atas akan mengotomatiskan jumlah Total Sukses & Gagal.</p>
+
                     <div class="pt-2 flex justify-end gap-2 border-t border-slate-100 mt-4">
                         <button type="button" onclick="closeEditReportModal()" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-200 hover:bg-slate-300 transition-colors text-sm">Batal</button>
                         <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors text-sm">Simpan Data</button>
@@ -489,6 +509,7 @@
         let scanner = null;
         let chartInstances = { trend: null, vehicle: null };
         let dashboardTrips = []; // Cache data dashboard lokal setelah API call
+        let rawDashboardData = []; // Data mentah dari DB sebelum difilter Staging
 
         // Register ChartJS DataLabels plugin
         Chart.register(ChartDataLabels);
@@ -544,7 +565,14 @@
             currentUser = null;
             document.getElementById('login-view').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
-            if(scanner) { scanner.clear(); document.getElementById('reader-container').classList.add('hidden'); }
+            if(scanner && scanner.isScanning) { 
+                scanner.stop().then(() => {
+                    scanner.clear();
+                    document.getElementById('reader-container').classList.add('hidden'); 
+                });
+            } else {
+                document.getElementById('reader-container').classList.add('hidden'); 
+            }
         }
 
         function showMainApp() {
@@ -561,11 +589,17 @@
             
             if(currentUser.role === 'admin') {
                 document.getElementById('tab-users').classList.remove('hidden');
-                switchTab('dashboard');
+                document.getElementById('tab-entry').classList.remove('hidden');
+            } else if (currentUser.role === 'visitor') {
+                document.getElementById('tab-users').classList.add('hidden');
+                document.getElementById('tab-entry').classList.add('hidden');
             } else {
                 document.getElementById('tab-users').classList.add('hidden');
-                switchTab('entry');
+                document.getElementById('tab-entry').classList.remove('hidden');
             }
+            
+            // SELALU BUKA DASHBOARD SEBAGAI HALAMAN PERTAMA KALI LOGIN
+            switchTab('dashboard');
         }
 
         // --- NAVIGATION ---
@@ -621,11 +655,47 @@
             const container = document.getElementById('reader-container');
             if (container.classList.contains('hidden')) {
                 container.classList.remove('hidden');
-                scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 100} });
-                scanner.render((text) => { addPackageToList(text); }, (err) => { /* ignore */ });
+                
+                if (!scanner) {
+                    scanner = new Html5Qrcode("reader");
+                }
+                
+                // Memaksa menggunakan kamera belakang (environment)
+                scanner.start(
+                    { facingMode: "environment" },
+                    {
+                        fps: 10,
+                        qrbox: { width: 250, height: 100 },
+                        aspectRatio: 1.777778 // Rasio layar HP pada umumnya
+                    },
+                    (decodedText, decodedResult) => {
+                        // Jika berhasil scan
+                        addPackageToList(decodedText);
+                        
+                        // Opsional: Getarkan HP jika didukung browser saat sukses scan
+                        if (navigator.vibrate) navigator.vibrate(100); 
+                    },
+                    (errorMessage) => {
+                        // Error wajar saat mencari barcode (abaikan)
+                    }
+                ).catch((err) => {
+                    // Gagal memulai kamera (tidak ada izin atau tidak ada kamera)
+                    showToast('Gagal mengakses kamera! Pastikan izin diberikan.', 'error');
+                    console.error(err);
+                    container.classList.add('hidden');
+                });
             } else {
-                if(scanner) scanner.clear();
-                container.classList.add('hidden');
+                // Matikan kamera dengan aman
+                if(scanner && scanner.isScanning) {
+                    scanner.stop().then(() => {
+                        scanner.clear();
+                        container.classList.add('hidden');
+                    }).catch((err) => {
+                        console.error('Gagal menghentikan kamera', err);
+                    });
+                } else {
+                    container.classList.add('hidden');
+                }
             }
         }
 
@@ -674,27 +744,28 @@
             const list = document.getElementById('packages-list');
             let successC = 0, failC = 0;
             
+            list.innerHTML = '';
             if(activePackages.length === 0) {
-                list.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60 py-10"><i class="fa-solid fa-box-open text-5xl mb-3"></i><p class="text-sm">Belum ada paket</p></div>`;
+                list.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60 py-10">
+                        <i class="fa-solid fa-box-open text-5xl mb-3"></i>
+                        <p class="text-sm">Belum ada paket ditambahkan</p>
+                    </div>`;
             } else {
-                list.innerHTML = '';
-                activePackages.forEach((p, idx) => {
+                activePackages.forEach((p, index) => {
                     if(p.status === 'sukses') successC++;
                     if(p.status === 'gagal') failC++;
                     
                     const isS = p.status === 'sukses';
                     const isG = p.status === 'gagal';
+                    const isP = p.status === 'pending';
                     
                     const div = document.createElement('div');
-                    div.className = `mb-3 bg-white border ${isS ? 'border-green-300' : isG ? 'border-red-300' : 'border-slate-200'} rounded-xl p-3 shadow-sm flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between transition-all`;
-                    
+                    div.className = `flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 mb-2 rounded-xl border ${isS ? 'bg-green-50 border-green-200' : isG ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'} transition-colors`;
                     div.innerHTML = `
-                        <div class="flex items-center gap-3 w-full sm:w-auto">
-                            <div class="w-8 h-8 rounded-full ${isS ? 'bg-green-100 text-green-600' : isG ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-400'} flex items-center justify-center font-bold text-xs shrink-0">${activePackages.length - idx}</div>
-                            <div>
-                                <p class="font-mono font-bold text-slate-800 text-sm tracking-wide">${p.resi}</p>
-                                ${isG && p.reason ? `<p class="text-[11px] text-red-600 font-bold bg-red-50 inline-block px-2 py-0.5 rounded mt-1"><i class="fa-solid fa-circle-info"></i> ${p.reason}</p>` : ''}
-                            </div>
+                        <div class="mb-2 sm:mb-0">
+                            <p class="font-mono font-bold text-slate-700">${p.resi}</p>
+                            ${isG ? `<p class="text-xs text-red-600 font-semibold mt-1"><i class="fa-solid fa-triangle-exclamation"></i> ${p.reason}</p>` : ''}
                         </div>
                         <div class="flex items-center gap-1 w-full sm:w-auto">
                             <button onclick="updateStatus('${p.id}', 'sukses')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isS ? 'bg-green-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-green-100 hover:text-green-600'}"><i class="fa-solid fa-check"></i> Sukses</button>
@@ -822,7 +893,7 @@
             const t = dashboardTrips.find(x => x.id === id);
             if(!t) return;
             
-            let text = `*LAPORAN PENGANTARAN LOGISFAST*\n📅 ${t.date}\n\n`;
+            let text = `*LAPORAN PENGANTARAN BP*\n📅 ${t.date}\n\n`;
             text += `*INFO OPERASIONAL*\n🏢 Staging: ${t.staging}\n🚚 Unit: ${t.unit} (${t.nopol})\n🔄 Ritase: Ke-${t.rit}\n⏰ Waktu: ${t.jamMulai} - ${t.jamSelesai} (Durasi: ${t.durasi})\n👥 Tim: ${t.driver} (Drv) & ${t.asisten} (Ast)\n👤 Leader: ${t.leaderName}\n\n`;
             text += `*RINGKASAN PAKET*\n📦 Total Bawa: ${t.total}\n✅ Sukses: ${t.sukses}\n❌ Gagal/Retur: ${t.gagal}\n\n`;
             
@@ -832,7 +903,7 @@
             if(t.detailGagal && t.detailGagal.length > 0) {
                 text += `*DETAIL GAGAL & KENDALA (${t.detailGagal.length})*\n${t.detailGagal.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n')}\n\n`;
             }
-            text += `_Generated via Sistem LogisFast_`;
+            text += `_Generated via Sistem LogisFast https://bp-staging-orcin.vercel.app/_`;
 
             const el = document.createElement('textarea');
             el.value = text;
@@ -858,11 +929,32 @@
             document.getElementById('edit-sukses').value = t.sukses;
             document.getElementById('edit-gagal').value = t.gagal;
 
+            // Menampilkan Detail Resi ke Textarea
+            const textSukses = (t.detailSukses || []).join('\n');
+            document.getElementById('edit-detail-sukses').value = textSukses;
+
+            const textGagal = (t.detailGagal || []).map(p => `${p.resi} - ${p.reason}`).join('\n');
+            document.getElementById('edit-detail-gagal').value = textGagal;
+
             document.getElementById('edit-report-modal').classList.remove('hidden');
         };
 
         window.closeEditReportModal = () => {
             document.getElementById('edit-report-modal').classList.add('hidden');
+        };
+
+        // Hitung ulang otomatis saat teks diketik
+        window.recalculateEditMetrics = () => {
+            const rawSukses = document.getElementById('edit-detail-sukses').value;
+            const rawGagal = document.getElementById('edit-detail-gagal').value;
+            
+            // Pisahkan berdasarkan baris baru, hapus spasi kosong, lalu hitung yang tersisa
+            const countS = rawSukses.split('\n').map(r => r.trim()).filter(r => r.length > 0).length;
+            const countG = rawGagal.split('\n').map(r => r.trim()).filter(r => r.length > 0).length;
+            
+            document.getElementById('edit-sukses').value = countS;
+            document.getElementById('edit-gagal').value = countG;
+            document.getElementById('edit-total').value = countS + countG;
         };
 
         window.saveEditReport = async (e) => {
@@ -871,6 +963,19 @@
             
             const jMulai = document.getElementById('edit-jam-mulai').value;
             const jSelesai = document.getElementById('edit-jam-selesai').value;
+
+            // Parsing resi sukses kembali jadi Array
+            const rawSukses = document.getElementById('edit-detail-sukses').value;
+            const detailSuksesBaru = rawSukses.split('\n').map(r => r.trim()).filter(r => r.length > 0);
+            
+            // Parsing resi gagal (pisahkan nomor resi dan alasannya)
+            const rawGagal = document.getElementById('edit-detail-gagal').value;
+            const detailGagalBaru = rawGagal.split('\n').map(r => r.trim()).filter(r => r.length > 0).map(line => {
+                const parts = line.split('-');
+                const resi = parts[0].trim();
+                const reason = parts.length > 1 ? parts.slice(1).join('-').trim() : 'Tanpa Keterangan';
+                return { resi, reason };
+            });
 
             const updateData = {
                 nopol: document.getElementById('edit-nopol').value.toUpperCase(),
@@ -882,7 +987,9 @@
                 rit: parseInt(document.getElementById('edit-rit').value),
                 total: parseInt(document.getElementById('edit-total').value),
                 sukses: parseInt(document.getElementById('edit-sukses').value),
-                gagal: parseInt(document.getElementById('edit-gagal').value)
+                gagal: parseInt(document.getElementById('edit-gagal').value),
+                detail_sukses: detailSuksesBaru,
+                detail_gagal: detailGagalBaru
             };
             
             showToast('Memperbarui laporan ke database...', 'success');
@@ -1063,10 +1170,9 @@
         async function renderDashboardData() {
             const startStr = document.getElementById('filter-date-start').value;
             const endStr = document.getElementById('filter-date-end').value;
-            const isAdmin = currentUser.role === 'admin';
             
             const tbody = document.getElementById('dashboard-table-body');
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-blue-500"></i> Memuat Data dari Cloud...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-blue-500"></i> Memuat Data dari Cloud...</td></tr>`;
             
             // Filter by selected date range from Supabase
             const { data: db, error } = await supabaseClient.from('trips')
@@ -1077,8 +1183,44 @@
 
             if(error) { tbody.innerHTML = ''; showToast('Gagal memuat Data Laporan', 'error'); return; }
 
+            rawDashboardData = db || [];
+
+            // Update pilihan Dropdown Staging secara dinamis sesuai data yang ditarik
+            const stagingSelect = document.getElementById('filter-staging');
+            const currentSelection = stagingSelect.value;
+            const uniqueStagings = [...new Set(rawDashboardData.map(t => t.staging))].sort();
+            
+            stagingSelect.innerHTML = '<option value="ALL">Semua Staging</option>';
+            uniqueStagings.forEach(stg => {
+                const opt = document.createElement('option');
+                opt.value = stg;
+                opt.innerText = stg;
+                stagingSelect.appendChild(opt);
+            });
+
+            // Kembalikan pilihan staging sebelumnya jika masih tersedia di data tanggal baru
+            if (uniqueStagings.includes(currentSelection)) {
+                stagingSelect.value = currentSelection;
+            }
+
+            processAndRenderDashboard();
+        }
+
+        window.processAndRenderDashboard = () => {
+            const startStr = document.getElementById('filter-date-start').value;
+            const endStr = document.getElementById('filter-date-end').value;
+            const selectedStaging = document.getElementById('filter-staging').value;
+            const isAdmin = currentUser.role === 'admin';
+            const isVisitor = currentUser.role === 'visitor';
+            
+            // Saring data berdasarkan Dropdown Staging (jika bukan "Semua Staging")
+            let filteredDb = rawDashboardData;
+            if (selectedStaging !== 'ALL') {
+                filteredDb = rawDashboardData.filter(t => t.staging === selectedStaging);
+            }
+
             // Cache & Map Data
-            dashboardTrips = db.map(t => ({
+            dashboardTrips = filteredDb.map(t => ({
                 id: t.id, timestamp: t.timestamp, date: t.date,
                 leaderName: t.leader_name, staging: t.staging,
                 unit: t.unit, nopol: t.nopol, driver: t.driver, asisten: t.asisten,
@@ -1089,13 +1231,15 @@
 
             // Calc Stats
             let sumArmada = new Set(dashboardTrips.map(t => t.nopol)).size;
-            let sumPaket = 0, sumSukses = 0, sumGagal = 0;
-            let ssStats = {}; // To store success package per SS
+            let sumSukses = 0, sumGagal = 0;
+            let sumPaket = 0;
+            let ssStats = {}; 
 
+            const tbody = document.getElementById('dashboard-table-body');
             tbody.innerHTML = '';
 
             if(dashboardTrips.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400 text-sm">Tidak ada data laporan di rentang tanggal ini.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-400 text-sm">Tidak ada data laporan di rentang tanggal ini.</td></tr>`;
             } else {
                 dashboardTrips.forEach(t => {
                     sumPaket += t.total; sumSukses += t.sukses; sumGagal += t.gagal;
@@ -1109,6 +1253,7 @@
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-slate-50 transition-colors';
                     tr.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap"><p class="text-sm font-bold text-slate-700">${t.date}</p></td>
                         <td class="px-4 py-3"><span class="bg-slate-100 text-slate-600 font-mono text-xs px-2 py-1 rounded font-bold">${timeStr}</span></td>
                         <td class="px-4 py-3"><p class="font-bold text-slate-800 text-sm uppercase">${t.staging}</p><p class="text-[11px] text-slate-500">${t.leaderName}</p></td>
                         <td class="px-4 py-3">
@@ -1122,7 +1267,7 @@
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-1.5">
                                 <button onclick="copyReportFromDb('${t.id}')" title="Salin Text WA" class="text-green-600 bg-green-50 hover:bg-green-100 p-2 rounded-lg transition-colors"><i class="fa-brands fa-whatsapp text-lg"></i></button>
-                                <button onclick="openEditReportModal('${t.id}')" title="Edit Laporan" class="text-blue-600 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-pen"></i></button>
+                                ${!isVisitor ? `<button onclick="openEditReportModal('${t.id}')" title="Edit Laporan" class="text-blue-600 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-pen"></i></button>` : ''}
                                 ${isAdmin ? `<button onclick="deleteReport('${t.id}')" title="Hapus Permanen" class="text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-trash"></i></button>` : ''}
                             </div>
                         </td>
@@ -1142,32 +1287,43 @@
         }
 
         function renderCharts(dbData, startStr, endStr, ssStats) {
-            // 1. Staging (SS) Doughnut Chart
+            // 1. Staging (SS) Bar Chart (Horizontal)
             const ctxV = document.getElementById('vehicleChart').getContext('2d');
             if(chartInstances.vehicle) chartInstances.vehicle.destroy();
             
             const colors = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#ec4899', '#eab308', '#06b6d4'];
             
             chartInstances.vehicle = new Chart(ctxV, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
                     labels: Object.keys(ssStats).length > 0 ? Object.keys(ssStats) : ['Belum Ada Data'],
                     datasets: [{
-                        data: Object.keys(ssStats).length > 0 ? Object.values(ssStats) : [1],
+                        label: 'Total Sukses',
+                        data: Object.keys(ssStats).length > 0 ? Object.values(ssStats) : [0],
                         backgroundColor: Object.keys(ssStats).length > 0 ? colors : ['#cbd5e1'],
+                        borderRadius: 6,
                         borderWidth: 0
                     }]
                 },
                 options: { 
-                    responsive: true, maintainAspectRatio: false, 
+                    indexAxis: 'y', // Mengubah menjadi batang horizontal
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: {
+                        x: { display: false, grid: { display: false } }, // Sembunyikan garis & nilai X
+                        y: { grid: { display: false }, border: { display: false } } // Sembunyikan garis Y
+                    },
                     plugins: { 
-                        legend: { position: 'right' },
+                        legend: { display: false }, // Sembunyikan legend karena label sudah di sumbu Y
                         datalabels: {
-                            color: '#fff',
+                            color: '#475569',
+                            anchor: 'end',
+                            align: 'right',
                             font: { weight: 'bold' },
                             formatter: (value) => { return Object.keys(ssStats).length > 0 && value > 0 ? value : ''; }
                         }
-                    } 
+                    },
+                    layout: { padding: { right: 35 } } // Memberi ruang agar angka tidak terpotong di ujung kanan
                 }
             });
 
@@ -1205,8 +1361,8 @@
                 options: { 
                     responsive: true, maintainAspectRatio: false,
                     scales: { 
-                        y: { display: false, beginAtZero: true }, 
-                        x: { grid: { display: false } } 
+                        y: { display: false, grid: { display: false } }, 
+                        x: { grid: { display: false }, border: { display: false } } // Sembunyikan garis X sepenuhnya
                     },
                     plugins: {
                         datalabels: {
