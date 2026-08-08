@@ -72,9 +72,12 @@
             -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid rgba(226, 232, 240, 0.8);
         }
+
+        /* Penyesuaian Safe Area untuk HP Modern (Home Indicator) */
+        .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
     </style>
 </head>
-<body class="text-slate-800 antialiased overflow-hidden w-full h-screen flex flex-col">
+<body class="text-slate-800 antialiased overflow-hidden w-full h-[100dvh] flex flex-col">
 
     <!-- LOGIN SECTION -->
     <div id="login-view" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 overflow-y-auto px-4 py-10">
@@ -214,7 +217,7 @@
             </header>
 
             <!-- SCROLLABLE MAIN -->
-            <main class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-6 custom-scrollbar w-full relative z-0">
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 pb-28 sm:pb-6 custom-scrollbar w-full relative z-0">
                 <div class="max-w-7xl mx-auto w-full">
 
                     <!-- TAB 1: ENTRY (LEADER) -->
@@ -515,7 +518,7 @@
             </main>
 
             <!-- BOTTOM NAVIGATION MOBILE (Hidden on Desktop) -->
-            <nav class="sm:hidden absolute bottom-0 w-full glass-nav z-30 pb-safe shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+            <nav class="sm:hidden fixed bottom-0 left-0 w-full glass-nav z-30 pb-safe shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
                 <div class="flex justify-around items-center px-2 py-2">
                     <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-btn flex flex-col items-center justify-center w-16 py-1 text-slate-400 hover:text-blue-600 transition-colors">
                         <div class="nav-indicator w-10 h-8 rounded-full flex items-center justify-center mb-1 transition-all"><i class="fa-solid fa-chart-pie text-lg"></i></div>
