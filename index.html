@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- Tambahkan Supabase JS SDK -->
+    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
@@ -41,20 +41,28 @@
     <!-- LOGIN SECTION -->
     <div id="login-view" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md animate-fade-in border border-slate-100">
-            <div class="text-center mb-8">
+            <div class="text-center mb-6">
                 <div class="bg-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg shadow-blue-500/30">
                     <i class="fa-solid fa-truck-fast"></i>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-800">LogisFast Portal</h1>
                 <p class="text-sm text-slate-500 mt-1">Sistem Laporan Operasional Transport</p>
             </div>
+
+            <!-- Login Tabs -->
+            <div class="flex border-b border-slate-200 mb-6">
+                <button type="button" onclick="switchLoginTab('leader')" id="tab-login-leader" class="flex-1 pb-3 text-xs sm:text-sm font-bold border-b-2 border-blue-600 text-blue-600 transition-colors">Admin/Leader</button>
+                <button type="button" onclick="switchLoginTab('asisten')" id="tab-login-asisten" class="flex-1 pb-3 text-xs sm:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors">Akses Asisten</button>
+                <button type="button" onclick="switchLoginTab('visitor')" id="tab-login-visitor" class="flex-1 pb-3 text-xs sm:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors">Visitor</button>
+            </div>
             
-            <form id="login-form" class="space-y-5" onsubmit="handleLogin(event)">
+            <!-- Form Admin/Leader -->
+            <form id="login-form-leader" class="space-y-5" onsubmit="handleLogin(event)">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">ID Pengguna</label>
                     <div class="relative">
                         <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="login-id" required class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="Masukkan ID (contoh: admin / leader1)">
+                        <input type="text" id="login-id" required class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="ID (admin / leader1)">
                     </div>
                 </div>
                 <div>
@@ -64,15 +72,40 @@
                         <input type="password" id="login-pass" required class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="••••••••">
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-all transform active:scale-[0.98] shadow-md">
-                    Masuk Sekarang <i class="fa-solid fa-arrow-right ml-2"></i>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-all transform active:scale-[0.98] shadow-md flex items-center justify-center gap-2">
+                    Masuk Sekarang <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </form>
-            <div class="mt-6 text-center text-xs text-slate-400 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                <p><strong>Demo Akses:</strong></p>
-                <p>Admin: id <b>admin</b> | pass <b>admin123</b></p>
-                <p>Leader: id <b>leader1</b> | pass <b>pass123</b></p>
-            </div>
+
+            <!-- Form Asisten -->
+            <form id="login-form-asisten" class="space-y-5 hidden" onsubmit="handleLoginJMO(event)">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Kode Pengantaran (SMO)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="login-jmo" required class="w-full pl-11 pr-4 py-3 bg-blue-50 border border-blue-200 text-blue-700 font-bold uppercase rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Contoh: SMO-1234">
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-2"><i class="fa-solid fa-info-circle"></i> Minta kode SMO ini dari Leader Anda yang telah menyusun daftar paket.</p>
+                </div>
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold transition-all transform active:scale-[0.98] shadow-md flex items-center justify-center gap-2">
+                    Buka Akses Pengantaran <i class="fa-solid fa-box-open"></i>
+                </button>
+            </form>
+
+            <!-- Form Visitor -->
+            <form id="login-form-visitor" class="space-y-5 hidden" onsubmit="handleLoginVisitor(event)">
+                <div class="text-center">
+                    <div class="bg-teal-100 text-teal-600 w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                        <i class="fa-solid fa-eye"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg mb-2">Akses Pemantau (Visitor)</h3>
+                    <p class="text-sm text-slate-500 mb-4">Masuk secara instan tanpa kata sandi untuk sekadar memantau data Dashboard.</p>
+                </div>
+                <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-bold transition-all transform active:scale-[0.98] shadow-md flex items-center justify-center gap-2">
+                    Lihat Dashboard Sekarang <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
         </div>
     </div>
 
@@ -113,6 +146,9 @@
                 <button onclick="switchTab('users')" id="tab-users" class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 hover:bg-slate-100 flex items-center gap-2 hidden">
                     <i class="fa-solid fa-users-gear"></i> Manajemen User
                 </button>
+                <button onclick="switchTab('settings')" id="tab-settings" class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 hover:bg-slate-100 flex items-center gap-2 hidden">
+                    <i class="fa-solid fa-gear"></i> Pengaturan
+                </button>
             </div>
         </div>
 
@@ -138,6 +174,15 @@
                                 <div>
                                     <label class="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wide">Staging</label>
                                     <input type="text" id="info-staging" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-blue-600 mb-1 uppercase tracking-wide">Kode SMO (Akses Asisten)</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="info-jmo" placeholder="Ketik Kode SMO..." class="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm font-bold text-blue-700 outline-none uppercase focus:ring-2 focus:ring-blue-500">
+                                        <select id="info-jmo-admin" onchange="onAdminSelectDraft()" class="hidden w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm font-bold text-blue-700 outline-none uppercase focus:ring-2 focus:ring-blue-500">
+                                            <option value="">PILIH RUTE AKTIF...</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wide">Jenis Unit</label>
@@ -172,6 +217,10 @@
                                     <label class="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wide text-orange-600">Jam Selesai / Kembali ke SS</label>
                                     <input type="time" id="info-jam-selesai" class="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none font-bold">
                                 </div>
+                                <div class="md:col-span-2 lg:col-span-4">
+                                    <label class="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wide">Catatan / Kendala Rute (Opsional)</label>
+                                    <input type="text" id="info-catatan" placeholder="Ketik jika ada kendala di jalan (macet, banjir, kecelakaan, dll)..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -179,7 +228,8 @@
                     <!-- Input Resi Paket -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-1 space-y-4">
-                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                            <!-- Area Tambah Paket (Akan Disembunyikan untuk Asisten) -->
+                            <div id="add-package-section" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-box text-blue-500"></i> Tambah Paket (Resi)</h3>
                                 
                                 <form onsubmit="addPackageManual(event)" class="flex gap-2 mb-4">
@@ -204,18 +254,22 @@
 
                             <!-- Statistik Kecil -->
                             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                                <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="grid grid-cols-4 gap-2 text-center">
                                     <div class="p-3 bg-slate-50 rounded-xl">
-                                        <p class="text-xs text-slate-500 font-bold mb-1">Total</p>
-                                        <p class="text-xl font-black text-slate-700" id="stat-entry-total">0</p>
+                                        <p class="text-[10px] sm:text-xs text-slate-500 font-bold mb-1">Total</p>
+                                        <p class="text-lg sm:text-xl font-black text-slate-700" id="stat-entry-total">0</p>
                                     </div>
                                     <div class="p-3 bg-green-50 rounded-xl">
-                                        <p class="text-xs text-green-600 font-bold mb-1">Sukses</p>
-                                        <p class="text-xl font-black text-green-600" id="stat-entry-sukses">0</p>
+                                        <p class="text-[10px] sm:text-xs text-green-600 font-bold mb-1">Sukses</p>
+                                        <p class="text-lg sm:text-xl font-black text-green-600" id="stat-entry-sukses">0</p>
                                     </div>
                                     <div class="p-3 bg-red-50 rounded-xl">
-                                        <p class="text-xs text-red-600 font-bold mb-1">Gagal</p>
-                                        <p class="text-xl font-black text-red-600" id="stat-entry-gagal">0</p>
+                                        <p class="text-[10px] sm:text-xs text-red-600 font-bold mb-1">Gagal</p>
+                                        <p class="text-lg sm:text-xl font-black text-red-600" id="stat-entry-gagal">0</p>
+                                    </div>
+                                    <div class="p-3 bg-yellow-50 rounded-xl">
+                                        <p class="text-[10px] sm:text-xs text-yellow-700 font-bold mb-1 whitespace-nowrap">F. Majeure</p>
+                                        <p class="text-lg sm:text-xl font-black text-yellow-600" id="stat-entry-fm">0</p>
                                     </div>
                                 </div>
                             </div>
@@ -226,7 +280,7 @@
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[400px]">
                                 <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
                                     <h3 class="font-bold text-slate-800">Daftar Paket (<span id="count-paket">0</span>)</h3>
-                                    <button onclick="clearPackages()" class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">Kosongkan</button>
+                                    <button onclick="clearPackages()" id="btn-clear-packages" class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">Kosongkan</button>
                                 </div>
                                 <div class="p-4 flex-1 overflow-y-auto custom-scrollbar max-h-[500px]" id="packages-list">
                                     <!-- List resi muncul disini -->
@@ -245,9 +299,20 @@
                             <h3 class="font-bold text-slate-800">Selesai Pengantaran?</h3>
                             <p class="text-sm text-slate-500">Pastikan status semua paket sudah diupdate, lalu simpan laporan.</p>
                         </div>
-                        <button onclick="generateReport()" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2">
-                            <i class="fa-brands fa-whatsapp text-xl"></i> Buat Laporan WA & Simpan
-                        </button>
+                        <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
+                            <button onclick="saveDraft()" id="btn-simpan-draf" class="w-full sm:w-auto bg-slate-600 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i> Simpan Draf
+                            </button>
+                            <button onclick="resetFormEntry()" id="btn-reset-form" class="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-rotate-right"></i> Reset
+                            </button>
+                            <button onclick="selesaiOlehAsisten()" id="btn-selesai-asisten" class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2 hidden">
+                                <i class="fa-solid fa-flag-checkered"></i> Selesai Pengantaran
+                            </button>
+                            <button onclick="generateReport()" id="btn-buat-laporan" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-xl"></i> Buat Laporan & Simpan
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -340,11 +405,11 @@
                 <div id="section-users" class="space-y-6 animate-fade-in hidden">
                     <div class="flex justify-between items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                         <div>
-                            <h2 class="text-lg font-bold text-slate-800">Manajemen Pengguna (Leader)</h2>
-                            <p class="text-sm text-slate-500">Tambah, edit, atau hapus akses leader staging.</p>
+                            <h2 class="text-lg font-bold text-slate-800">Manajemen Pengguna</h2>
+                            <p class="text-sm text-slate-500">Kelola akses Admin dan Leader.</p>
                         </div>
-                        <button onclick="openUserModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-plus"></i> Tambah Leader
+                        <button onclick="openUserModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold transition-all shadow-sm text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Tambah User
                         </button>
                     </div>
 
@@ -353,16 +418,46 @@
                             <table class="w-full text-left text-sm text-slate-600">
                                 <thead class="bg-slate-50 text-slate-800 font-semibold border-b border-slate-200">
                                     <tr>
-                                        <th class="px-4 py-3">ID Login</th>
-                                        <th class="px-4 py-3">Nama Pengguna</th>
-                                        <th class="px-4 py-3">Role & Staging</th>
+                                        <th class="px-4 py-3 whitespace-nowrap">ID Login</th>
+                                        <th class="px-4 py-3 whitespace-nowrap">Nama Lengkap</th>
+                                        <th class="px-4 py-3 whitespace-nowrap">Role & Staging</th>
                                         <th class="px-4 py-3 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="users-table-body" class="divide-y divide-slate-100">
-                                    <!-- Users will be injected here -->
+                                    <!-- Data baris pengguna akan dimuat disini -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: PENGATURAN (ADMIN) -->
+                <div id="section-settings" class="space-y-6 animate-fade-in hidden">
+                    <div class="flex justify-between items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Pengaturan Sistem</h2>
+                            <p class="text-sm text-slate-500">Konfigurasi opsi dinamis seperti alasan gagal pengantaran.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Pengaturan Alasan Gagal -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                                <h3 class="font-bold text-slate-800"><i class="fa-solid fa-list-ul text-blue-500 mr-2"></i>Daftar Alasan Gagal / Retur</h3>
+                            </div>
+                            <div class="p-6">
+                                <form onsubmit="addReasonForm(event)" class="flex gap-2 mb-4">
+                                    <input type="text" id="input-new-reason" placeholder="Ketik alasan baru..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <button type="submit" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm font-bold text-sm">
+                                        Tambah
+                                    </button>
+                                </form>
+                                <div id="settings-reasons-list" class="max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                                    <!-- List alasan dari db muncul disini -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -388,6 +483,14 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap</label>
                     <input type="text" id="user-name" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Role / Peran</label>
+                    <select id="user-role" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="leader">Leader</option>
+                        <option value="admin">Admin</option>
+                        <option value="visitor">Visitor (Pemantau)</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Staging Area</label>
@@ -420,12 +523,8 @@
             <div class="p-5">
                 <input type="hidden" id="active-fail-id">
                 <p class="text-sm text-slate-600 mb-4 font-medium">Pilih kendala yang menyebabkan paket ini gagal terkirim:</p>
-                <div class="space-y-2 flex flex-col">
-                    <button onclick="saveReason('Toko / Kantor Tutup')" class="text-left px-4 py-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-600 font-bold text-slate-700 transition-colors text-sm">Toko / Kantor Tutup</button>
-                    <button onclick="saveReason('Alamat Tidak Ditemukan')" class="text-left px-4 py-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-600 font-bold text-slate-700 transition-colors text-sm">Alamat Tidak Ditemukan</button>
-                    <button onclick="saveReason('Pelanggan Menolak / Batal')" class="text-left px-4 py-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-600 font-bold text-slate-700 transition-colors text-sm">Pelanggan Menolak / Batal</button>
-                    <button onclick="saveReason('Pindah Alamat')" class="text-left px-4 py-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-600 font-bold text-slate-700 transition-colors text-sm">Pindah Alamat</button>
-                    <button onclick="saveReason('Kendala Unit / Cuaca Buruk')" class="text-left px-4 py-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-600 font-bold text-slate-700 transition-colors text-sm">Kendala Unit / Cuaca Buruk</button>
+                <div id="dynamic-reasons-container" class="space-y-2 flex flex-col">
+                    <!-- Dynamic reasons will be injected here -->
                 </div>
             </div>
             <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
@@ -450,40 +549,103 @@
         </div>
     </div>
 
+    <!-- MODAL: VIEW LAPORAN (READ ONLY) -->
+    <div id="view-report-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in transform transition-all max-h-[90vh] flex flex-col">
+            <div class="bg-indigo-600 px-5 py-4 flex justify-between items-center text-white shrink-0">
+                <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-eye"></i> Detail Laporan Pengantaran</h3>
+                <button onclick="closeViewReportModal()" class="text-white hover:text-indigo-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto flex-1 custom-scrollbar space-y-5">
+                
+                <!-- Grid Informasi Dasar -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div><p class="text-[10px] uppercase font-bold text-slate-500">Tanggal</p><p id="view-date" class="text-sm font-semibold text-slate-800">-</p></div>
+                    <div><p class="text-[10px] uppercase font-bold text-slate-500">Staging</p><p id="view-staging" class="text-sm font-semibold text-slate-800">-</p></div>
+                    <div class="md:col-span-2"><p class="text-[10px] uppercase font-bold text-slate-500">No. SMO</p><p id="view-smo" class="text-sm font-bold text-indigo-600">-</p></div>
+                    
+                    <div class="md:col-span-2"><p class="text-[10px] uppercase font-bold text-slate-500">Kendaraan & Nopol</p><p id="view-unit" class="text-sm font-semibold text-slate-800">-</p></div>
+                    <div><p class="text-[10px] uppercase font-bold text-slate-500">Ritase</p><p id="view-rit" class="text-sm font-semibold text-slate-800">-</p></div>
+                    <div><p class="text-[10px] uppercase font-bold text-slate-500">Jam & Durasi</p><p id="view-jam" class="text-sm font-semibold text-slate-800">-</p></div>
+
+                    <div><p class="text-[10px] uppercase font-bold text-slate-500">Driver</p><p id="view-driver" class="text-sm font-semibold text-slate-800">-</p></div>
+                    <div><p class="text-[10px] uppercase font-bold text-slate-500">Asisten</p><p id="view-asisten" class="text-sm font-semibold text-slate-800">-</p></div>
+                    <div class="md:col-span-2"><p class="text-[10px] uppercase font-bold text-slate-500">Catatan Kendala</p><p id="view-catatan" class="text-sm font-semibold text-slate-800">-</p></div>
+                </div>
+
+                <!-- Grid Ringkasan Paket -->
+                <div class="grid grid-cols-4 gap-3 text-center">
+                    <div class="bg-blue-50 border border-blue-100 p-3 rounded-xl"><p class="text-[10px] uppercase font-bold text-blue-600">Total Bawa</p><p id="view-total" class="text-xl font-black text-blue-700">0</p></div>
+                    <div class="bg-green-50 border border-green-100 p-3 rounded-xl"><p class="text-[10px] uppercase font-bold text-green-600">Sukses</p><p id="view-sukses" class="text-xl font-black text-green-700">0</p></div>
+                    <div class="bg-red-50 border border-red-100 p-3 rounded-xl"><p class="text-[10px] uppercase font-bold text-red-600">Gagal</p><p id="view-gagal" class="text-xl font-black text-red-700">0</p></div>
+                    <div class="bg-yellow-50 border border-yellow-100 p-3 rounded-xl"><p class="text-[10px] uppercase font-bold text-yellow-600">F. Majeure</p><p id="view-fm" class="text-xl font-black text-yellow-700">0</p></div>
+                </div>
+
+                <!-- Detail Resi -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-green-600 mb-1">Daftar Sukses</label>
+                        <textarea id="view-detail-sukses" readonly class="w-full h-32 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none resize-none text-slate-600"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-red-600 mb-1">Daftar Gagal & Alasan</label>
+                        <textarea id="view-detail-gagal" readonly class="w-full h-32 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none resize-none text-slate-600"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-yellow-600 mb-1">Daftar F. Majeure</label>
+                        <textarea id="view-detail-fm" readonly class="w-full h-32 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none resize-none text-slate-600"></textarea>
+                    </div>
+                </div>
+
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button onclick="closeViewReportModal()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-slate-800 hover:bg-slate-900 transition-colors text-sm">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: EDIT LAPORAN -->
     <div id="edit-report-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in transform transition-all max-h-[90vh] flex flex-col">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in transform transition-all max-h-[90vh] flex flex-col">
             <div class="bg-blue-600 px-5 py-4 flex justify-between items-center text-white shrink-0">
                 <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-pen-to-square"></i> Edit Laporan Trip</h3>
             </div>
             <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
                 <form id="edit-report-form" onsubmit="saveEditReport(event)" class="space-y-4">
                     <input type="hidden" id="edit-report-id">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-600 mb-1">Staging / SS</label><input type="text" id="edit-staging" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-semibold"></div>
-                        <div><label class="block text-xs font-bold text-slate-600 mb-1">No. Polisi</label><input type="text" id="edit-nopol" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm uppercase"></div>
-                        <div><label class="block text-xs font-bold text-slate-600 mb-1">Driver</label><input type="text" id="edit-driver" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
-                        <div><label class="block text-xs font-bold text-slate-600 mb-1">Asisten</label><input type="text" id="edit-asisten" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
-                        <div><label class="block text-xs font-bold text-blue-600 mb-1">Jam Mulai</label><input type="time" id="edit-jam-mulai" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
-                        <div><label class="block text-xs font-bold text-orange-600 mb-1">Jam Selesai</label><input type="time" id="edit-jam-selesai" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
-                        <div><label class="block text-xs font-bold text-slate-600 mb-1">Total Paket Bawa</label><input type="number" id="edit-total" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold"></div>
-                        <div><label class="block text-xs font-bold text-slate-600 mb-1">Ritase Ke-</label><input type="number" id="edit-rit" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
-                        <div><label class="block text-xs font-bold text-green-600 mb-1">Total Sukses</label><input type="number" id="edit-sukses" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-green-600"></div>
-                        <div><label class="block text-xs font-bold text-red-600 mb-1">Total Gagal</label><input type="number" id="edit-gagal" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-red-600"></div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-600 mb-1">Staging / SS</label><input type="text" id="edit-staging" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-semibold"></div>
+                        <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-600 mb-1">No. Polisi</label><input type="text" id="edit-nopol" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm uppercase"></div>
+                        
+                        <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-600 mb-1">Driver</label><input type="text" id="edit-driver" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
+                        <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-600 mb-1">Asisten</label><input type="text" id="edit-asisten" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
+                        
+                        <div class="col-span-1 md:col-span-1"><label class="block text-xs font-bold text-blue-600 mb-1">Jam Mulai</label><input type="time" id="edit-jam-mulai" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
+                        <div class="col-span-1 md:col-span-1"><label class="block text-xs font-bold text-orange-600 mb-1">Jam Selesai</label><input type="time" id="edit-jam-selesai" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
+                        <div class="col-span-2 md:col-span-2"><label class="block text-xs font-bold text-slate-600 mb-1">Ritase Ke-</label><input type="number" id="edit-rit" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm"></div>
+                        
+                        <div class="col-span-1"><label class="block text-xs font-bold text-slate-600 mb-1">Total Bawa</label><input type="number" id="edit-total" required class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold" readonly></div>
+                        <div class="col-span-1"><label class="block text-xs font-bold text-green-600 mb-1">Total Sukses</label><input type="number" id="edit-sukses" required class="w-full bg-slate-100 border border-green-200 rounded-xl px-4 py-2 text-sm font-bold text-green-600" readonly></div>
+                        <div class="col-span-1"><label class="block text-xs font-bold text-red-600 mb-1">Total Gagal</label><input type="number" id="edit-gagal" required class="w-full bg-slate-100 border border-red-200 rounded-xl px-4 py-2 text-sm font-bold text-red-600" readonly></div>
+                        <div class="col-span-1"><label class="block text-xs font-bold text-yellow-600 mb-1">Total F.Majeure</label><input type="number" id="edit-fm" required class="w-full bg-slate-100 border border-yellow-200 rounded-xl px-4 py-2 text-sm font-bold text-yellow-600" readonly></div>
                     </div>
 
                     <!-- Area Tambahan: Edit Resi Manual -->
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-green-600 mb-1">Detail Resi Sukses (1 baris = 1 resi)</label>
+                            <label class="block text-xs font-bold text-green-600 mb-1">Detail Sukses</label>
                             <textarea id="edit-detail-sukses" oninput="recalculateEditMetrics()" class="w-full h-32 bg-slate-50 border border-green-200 rounded-xl px-4 py-2 text-sm font-mono outline-none resize-none focus:ring-2 focus:ring-green-500" placeholder="RESI001\nRESI002"></textarea>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-red-600 mb-1">Detail Resi Gagal (Format: RESI - Alasan)</label>
-                            <textarea id="edit-detail-gagal" oninput="recalculateEditMetrics()" class="w-full h-32 bg-slate-50 border border-red-200 rounded-xl px-4 py-2 text-sm font-mono outline-none resize-none focus:ring-2 focus:ring-red-500" placeholder="RESI003 - Toko Tutup\nRESI004 - Alamat Tidak Ditemukan"></textarea>
+                            <label class="block text-xs font-bold text-red-600 mb-1">Detail Gagal (Format: RESI - Alasan)</label>
+                            <textarea id="edit-detail-gagal" oninput="recalculateEditMetrics()" class="w-full h-32 bg-slate-50 border border-red-200 rounded-xl px-4 py-2 text-sm font-mono outline-none resize-none focus:ring-2 focus:ring-red-500" placeholder="RESI003 - Toko Tutup"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-yellow-600 mb-1">Detail F. Majeure (Format: RESI - Alasan)</label>
+                            <textarea id="edit-detail-fm" oninput="recalculateEditMetrics()" class="w-full h-32 bg-slate-50 border border-yellow-200 rounded-xl px-4 py-2 text-sm font-mono outline-none resize-none focus:ring-2 focus:ring-yellow-500" placeholder="RESI004 - Hujan Badai"></textarea>
                         </div>
                     </div>
-                    <p class="text-[10px] text-slate-500 italic">*Penting: Menambah/menghapus baris resi di atas akan mengotomatiskan jumlah Total Sukses & Gagal.</p>
+                    <p class="text-[10px] text-slate-500 italic">*Penting: Menambah/menghapus baris resi di atas akan merubah jumlah Total secara otomatis.</p>
 
                     <div class="pt-2 flex justify-end gap-2 border-t border-slate-100 mt-4">
                         <button type="button" onclick="closeEditReportModal()" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-200 hover:bg-slate-300 transition-colors text-sm">Batal</button>
@@ -499,33 +661,35 @@
 
     <script>
         // --- SUPABASE CONFIGURATION ---
-        const SUPABASE_URL = 'https://brkdtxnfpakqbhhrtraw.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJya2R0eG5mcGFrcWJoaHJ0cmF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMzkwODIsImV4cCI6MjA4ODYxNTA4Mn0.v5aI110arDKYgLXa19J7P7fMskV9DT3IC3bBmWa34D8';
+        const SUPABASE_URL = 'https://svmgwupvjybfmatjfafp.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN2bWd3dXB2anliZm1hdGpmYWZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODc1NDUsImV4cCI6MjA4ODE2MzU0NX0.kP7Y0dy5l61Xi2S8ji9buq8W1R9ZNLyHyBHhTh3qFbw';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // --- DATA & STATE ---
         let currentUser = null;
         let activePackages = [];
         let scanner = null;
         let chartInstances = { trend: null, vehicle: null };
-        let dashboardTrips = []; // Cache data dashboard lokal setelah API call
-        let rawDashboardData = []; // Data mentah dari DB sebelum difilter Staging
+        let dashboardTrips = []; 
+        let rawDashboardData = []; 
+        let dynamicReasons = [];
+        
+        let adminSelectedDraftUserId = null; 
+        let originalLeaderName = ''; 
+        let originalLeaderStaging = '';
 
-        // Register ChartJS DataLabels plugin
         Chart.register(ChartDataLabels);
-
-        // Helper: Format Date
         const todayStr = new Date().toISOString().split('T')[0];
         
-        // --- INITIALIZATION ---
         window.onload = () => {
             document.getElementById('info-tanggal').value = todayStr;
+            
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 6);
             document.getElementById('filter-date-start').value = weekAgo.toISOString().split('T')[0];
             document.getElementById('filter-date-end').value = todayStr;
             
-            // Check session
+            fetchReasons();
+
             const session = localStorage.getItem('logisfast_session');
             if (session) {
                 currentUser = JSON.parse(session);
@@ -533,7 +697,22 @@
             }
         };
 
-        // --- AUTHENTICATION ---
+        window.switchLoginTab = (type) => {
+            const tabs = ['leader', 'asisten', 'visitor'];
+            tabs.forEach(t => {
+                const tabBtn = document.getElementById('tab-login-' + t);
+                const form = document.getElementById('login-form-' + t);
+                
+                if (t === type) {
+                    tabBtn.className = "flex-1 pb-3 text-xs sm:text-sm font-bold border-b-2 border-blue-600 text-blue-600 transition-colors";
+                    form.classList.remove('hidden');
+                } else {
+                    tabBtn.className = "flex-1 pb-3 text-xs sm:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors";
+                    form.classList.add('hidden');
+                }
+            });
+        };
+
         async function handleLogin(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
@@ -544,7 +723,6 @@
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
             
-            // Query ke tabel app_users di Supabase
             const { data, error } = await supabaseClient.from('app_users').select('*').eq('id', id).eq('pass', pass).single();
             
             btn.innerHTML = originalText;
@@ -556,15 +734,93 @@
                 showToast(`Selamat datang, ${data.name}!`, 'success');
                 showMainApp();
             } else {
-                showToast('ID atau Password salah, atau data belum disinkronisasi!', 'error');
+                showToast('ID atau Password salah!', 'error');
             }
         }
 
+        window.handleLoginJMO = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Mencari Draf...`;
+            btn.disabled = true;
+
+            const jmoInput = document.getElementById('login-jmo').value.trim().toUpperCase();
+            const { data, error } = await supabaseClient.from('drafts').select('*');
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            if (data && data.length > 0) {
+                const foundDraft = data.find(d => d.draft_data && d.draft_data.jmo === jmoInput);
+                
+                if (foundDraft) {
+                    currentUser = {
+                        id: foundDraft.user_id,
+                        role: 'asisten',
+                        name: foundDraft.draft_data.leaderName + ' (Asisten)',
+                        staging: foundDraft.draft_data.staging,
+                        realLeaderName: foundDraft.draft_data.leaderName
+                    };
+                    showToast(`Akses JMO Dibuka!`, 'success');
+                    showMainApp();
+                    applyDraftDataToUI(foundDraft.draft_data);
+                } else {
+                    showToast('Kode SMO tidak ditemukan atau Draf belum disimpan Leader!', 'error');
+                }
+            } else {
+                showToast('Tidak ada data rute aktif saat ini!', 'error');
+            }
+        };
+
+        window.handleLoginVisitor = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Membuka Dashboard...`;
+            btn.disabled = true;
+
+            // Beri sedikit jeda waktu (loading animasi) sebelum masuk agar terlihat natural
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                
+                currentUser = {
+                    id: 'visitor_guest',
+                    role: 'visitor',
+                    name: 'Tamu (Guest)',
+                    staging: 'Semua Area'
+                };
+                
+                localStorage.setItem('logisfast_session', JSON.stringify(currentUser));
+                showToast(`Selamat memantau, Tamu!`, 'success');
+                showMainApp();
+            }, 600);
+        };
+
         function handleLogout() {
+            if(currentUser) {
+                localStorage.removeItem('logisfast_draft_' + currentUser.id);
+            }
             localStorage.removeItem('logisfast_session');
             currentUser = null;
+            activePackages = [];
+            renderPackages(true);
+
+            document.getElementById('info-tanggal').value = new Date().toISOString().split('T')[0];
+            document.getElementById('info-unit').value = 'Blind Van';
+            document.getElementById('info-nopol').value = '';
+            document.getElementById('info-driver').value = '';
+            document.getElementById('info-asisten').value = '';
+            document.getElementById('info-rit').value = '1';
+            document.getElementById('info-jam-mulai').value = '';
+            document.getElementById('info-jam-selesai').value = '';
+            document.getElementById('info-jmo').value = '';
+            document.getElementById('info-catatan').value = '';
+
             document.getElementById('login-view').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
+            
             if(scanner && scanner.isScanning) { 
                 scanner.stop().then(() => {
                     scanner.clear();
@@ -589,34 +845,261 @@
             
             if(currentUser.role === 'admin') {
                 document.getElementById('tab-users').classList.remove('hidden');
+                document.getElementById('tab-settings').classList.remove('hidden');
                 document.getElementById('tab-entry').classList.remove('hidden');
+                
+                document.getElementById('info-jmo').classList.add('hidden');
+                document.getElementById('info-jmo-admin').classList.remove('hidden');
+                document.getElementById('info-staging').value = 'Mode Pengawas';
+                
+                disableFormsForAdmin();
+                switchTab('dashboard');
+                fetchActiveDraftsAdmin();
+                loadDraft();
             } else if (currentUser.role === 'visitor') {
                 document.getElementById('tab-users').classList.add('hidden');
+                document.getElementById('tab-settings').classList.add('hidden');
                 document.getElementById('tab-entry').classList.add('hidden');
-            } else {
+                switchTab('dashboard');
+            } else if (currentUser.role === 'leader') {
                 document.getElementById('tab-users').classList.add('hidden');
+                document.getElementById('tab-settings').classList.add('hidden');
                 document.getElementById('tab-entry').classList.remove('hidden');
+                
+                document.getElementById('info-jmo').classList.remove('hidden');
+                document.getElementById('info-jmo-admin').classList.add('hidden');
+
+                enableLeaderForms();
+                switchTab('dashboard');
+                loadDraft();
+            } else if (currentUser.role === 'asisten') {
+                document.getElementById('tab-users').classList.add('hidden');
+                document.getElementById('tab-dashboard').classList.add('hidden');
+                document.getElementById('tab-entry').classList.remove('hidden');
+                disableFormsForAsisten();
+                switchTab('entry');
             }
-            
-            // SELALU BUKA DASHBOARD SEBAGAI HALAMAN PERTAMA KALI LOGIN
-            switchTab('dashboard');
         }
 
-        // --- NAVIGATION ---
+        function disableFormsForAdmin() {
+            document.getElementById('add-package-section').classList.add('hidden');
+            document.getElementById('btn-clear-packages').classList.add('hidden');
+            
+            document.getElementById('btn-buat-laporan').classList.add('hidden');
+            document.getElementById('btn-selesai-asisten').classList.add('hidden');
+            document.getElementById('btn-simpan-draf').classList.add('hidden');
+            document.getElementById('btn-reset-form').classList.add('hidden');
+
+            const fields = ['info-tanggal', 'info-unit', 'info-nopol', 'info-driver', 'info-asisten', 'info-rit', 'info-jam-mulai', 'info-jam-selesai', 'info-catatan'];
+            fields.forEach(id => {
+                document.getElementById(id).disabled = true;
+                document.getElementById(id).classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+            });
+            showToast('Mode Pengawas Aktif. Anda hanya bisa memantau.', 'success');
+        }
+
+        function disableFormsForAsisten() {
+            document.getElementById('add-package-section').classList.add('hidden');
+            document.getElementById('btn-clear-packages').classList.add('hidden');
+            
+            document.getElementById('btn-buat-laporan').classList.add('hidden');
+            document.getElementById('btn-simpan-draf').classList.add('hidden');
+            document.getElementById('btn-reset-form').classList.add('hidden');
+            document.getElementById('btn-selesai-asisten').classList.remove('hidden');
+
+            const fields = ['info-tanggal', 'info-unit', 'info-nopol', 'info-driver', 'info-asisten', 'info-rit', 'info-jmo'];
+            fields.forEach(id => {
+                document.getElementById(id).disabled = true;
+                document.getElementById(id).classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+            });
+            showToast('Anda masuk sebagai Asisten. Info rute dikunci oleh Leader.', 'success');
+        }
+
+        function enableLeaderForms() {
+            document.getElementById('add-package-section').classList.remove('hidden');
+            document.getElementById('btn-clear-packages').classList.remove('hidden');
+            
+            document.getElementById('btn-buat-laporan').classList.remove('hidden');
+            document.getElementById('btn-simpan-draf').classList.remove('hidden');
+            document.getElementById('btn-reset-form').classList.remove('hidden');
+            document.getElementById('btn-selesai-asisten').classList.add('hidden');
+
+            const fields = ['info-tanggal', 'info-unit', 'info-nopol', 'info-driver', 'info-asisten', 'info-rit', 'info-jmo', 'info-jam-mulai', 'info-jam-selesai', 'info-catatan'];
+            fields.forEach(id => {
+                document.getElementById(id).disabled = false;
+                document.getElementById(id).classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+            });
+        }
+
+        window.fetchActiveDraftsAdmin = async () => {
+            const select = document.getElementById('info-jmo-admin');
+            select.innerHTML = '<option value="">PILIH RUTE AKTIF...</option>';
+            
+            const { data, error } = await supabaseClient.from('drafts').select('*');
+            if (data && data.length > 0) {
+                data.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.user_id;
+                    const jmoName = d.draft_data.jmo || 'TANPA_SMO';
+                    const leader = d.draft_data.leaderName || 'Unknown';
+                    const status = d.draft_data.is_finished ? '(Selesai Asisten)' : '(On Progress)';
+                    opt.text = `${jmoName} - ${leader} ${status}`;
+                    select.appendChild(opt);
+                });
+            } else {
+                resetFormEntry();
+            }
+        };
+
+        window.onAdminSelectDraft = async () => {
+            const userId = document.getElementById('info-jmo-admin').value;
+            adminSelectedDraftUserId = userId;
+            
+            if (!userId) {
+                document.getElementById('info-staging').value = 'Mode Pengawas';
+                resetFormEntry();
+                return;
+            }
+
+            const { data, error } = await supabaseClient.from('drafts').select('draft_data').eq('user_id', userId).single();
+            if (data && data.draft_data) {
+                originalLeaderName = data.draft_data.leaderName;
+                originalLeaderStaging = data.draft_data.staging;
+                
+                document.getElementById('info-staging').value = originalLeaderStaging;
+                applyDraftDataToUI(data.draft_data, true); 
+                showToast(`Menarik rute SMO milik ${originalLeaderName}`, 'success');
+            } else {
+                resetFormEntry();
+            }
+        };
+
+        window.resetFormEntry = () => {
+            document.getElementById('info-nopol').value = '';
+            document.getElementById('info-driver').value = '';
+            document.getElementById('info-asisten').value = '';
+            document.getElementById('info-jam-mulai').value = '';
+            document.getElementById('info-jam-selesai').value = '';
+            document.getElementById('info-jmo').value = ''; 
+            document.getElementById('info-catatan').value = '';
+            document.getElementById('info-rit').value = '1';
+            document.getElementById('info-tanggal').value = new Date().toISOString().split('T')[0];
+            
+            activePackages = [];
+            renderPackages(true); 
+
+            if (currentUser) {
+                localStorage.removeItem('logisfast_draft_' + currentUser.id);
+            }
+        };
+
+        window.saveDraft = async (silent = false, isFinished = false) => {
+            if(!currentUser || currentUser.role === 'visitor' || currentUser.role === 'admin') return;
+            
+            const jmoValue = document.getElementById('info-jmo').value.trim().toUpperCase();
+            
+            if (!jmoValue && silent !== true) {
+                showToast('Kode SMO wajib diisi sebelum menyimpan Draf!', 'error');
+                const infoBody = document.getElementById('form-info-body');
+                if (infoBody.classList.contains('hidden')) toggleSection('form-info-body');
+                document.getElementById('info-jmo').focus();
+                return;
+            }
+
+            const draftData = {
+                jmo: jmoValue,
+                is_finished: isFinished, 
+                leaderName: currentUser.role === 'asisten' ? currentUser.realLeaderName : currentUser.name,
+                staging: currentUser.staging,
+                tgl: document.getElementById('info-tanggal').value,
+                unit: document.getElementById('info-unit').value,
+                nopol: document.getElementById('info-nopol').value,
+                driver: document.getElementById('info-driver').value,
+                asisten: document.getElementById('info-asisten').value,
+                rit: document.getElementById('info-rit').value,
+                jMulai: document.getElementById('info-jam-mulai').value,
+                jSelesai: document.getElementById('info-jam-selesai').value,
+                catatan: document.getElementById('info-catatan').value,
+                packages: activePackages
+            };
+            
+            localStorage.setItem('logisfast_draft_' + currentUser.id, JSON.stringify(draftData));
+            
+            const targetUserId = (currentUser.role === 'admin' && adminSelectedDraftUserId) ? adminSelectedDraftUserId : currentUser.id;
+            const { error } = await supabaseClient
+                .from('drafts')
+                .upsert({ user_id: targetUserId, draft_data: draftData, updated_at: new Date().toISOString() });
+                
+            if(silent !== true) {
+                if (error) {
+                    showToast('Disimpan lokal, tapi gagal sinkron ke Cloud!', 'error');
+                } else {
+                    showToast('Draf berhasil disinkronisasi ke Cloud!', 'success');
+                }
+            }
+        };
+
+        window.loadDraft = async () => {
+            if (!currentUser || currentUser.role === 'visitor' || currentUser.role === 'asisten') return;
+            
+            const { data, error } = await supabaseClient.from('drafts').select('draft_data').eq('user_id', currentUser.id).single();
+            
+            if (data && data.draft_data) {
+                showToast('Memuat draf perjalanan dari Cloud...', 'success');
+                applyDraftDataToUI(data.draft_data);
+            } else {
+                resetFormEntry();
+            }
+        };
+
+        function applyDraftDataToUI(draftData, silentToast = false) {
+            try {
+                if(draftData.jmo) document.getElementById('info-jmo').value = draftData.jmo;
+                if(draftData.tgl) document.getElementById('info-tanggal').value = draftData.tgl;
+                if(draftData.unit) document.getElementById('info-unit').value = draftData.unit;
+                if(draftData.nopol) document.getElementById('info-nopol').value = draftData.nopol;
+                if(draftData.driver) document.getElementById('info-driver').value = draftData.driver;
+                if(draftData.asisten) document.getElementById('info-asisten').value = draftData.asisten;
+                if(draftData.rit) document.getElementById('info-rit').value = draftData.rit;
+                if(draftData.jMulai) document.getElementById('info-jam-mulai').value = draftData.jMulai;
+                if(draftData.jSelesai) document.getElementById('info-jam-selesai').value = draftData.jSelesai;
+                if(draftData.catatan !== undefined) document.getElementById('info-catatan').value = draftData.catatan;
+                
+                if(draftData.packages && draftData.packages.length > 0) {
+                    activePackages = draftData.packages;
+                    renderPackages(true); 
+                }
+
+                if (draftData.is_finished && currentUser.role !== 'asisten' && !silentToast) {
+                    showToast('Asisten telah kembali dan menyelesaikan rute. Silakan periksa lalu Buat Laporan!', 'success');
+                    const btnSubmit = document.getElementById('btn-buat-laporan');
+                    if(btnSubmit) {
+                        btnSubmit.classList.add('ring-4', 'ring-green-300', 'animate-pulse');
+                        setTimeout(() => btnSubmit.classList.remove('ring-4', 'ring-green-300', 'animate-pulse'), 5000);
+                    }
+                }
+            } catch (e) {
+                console.error('Gagal memuat draf', e);
+            }
+        }
+
         function switchTab(tabId) {
-            document.getElementById('section-entry').classList.add('hidden');
-            document.getElementById('section-dashboard').classList.add('hidden');
-            document.getElementById('section-users').classList.add('hidden');
+            document.getElementById('section-entry')?.classList.add('hidden');
+            document.getElementById('section-dashboard')?.classList.add('hidden');
+            document.getElementById('section-users')?.classList.add('hidden');
+            document.getElementById('section-settings')?.classList.add('hidden');
             
-            document.getElementById('tab-entry').classList.remove('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
-            document.getElementById('tab-dashboard').classList.remove('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
-            document.getElementById('tab-users').classList.remove('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
+            document.getElementById('tab-entry')?.classList.remove('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
+            document.getElementById('tab-dashboard')?.classList.remove('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
+            document.getElementById('tab-users')?.classList.remove('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
+            document.getElementById('tab-settings')?.classList.remove('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
             
-            document.getElementById(`section-${tabId}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabId}`).classList.add('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
+            document.getElementById(`section-${tabId}`)?.classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`)?.classList.add('bg-blue-50', 'text-blue-700', 'border-b-2', 'border-blue-600');
 
             if(tabId === 'dashboard') renderDashboardData();
             if(tabId === 'users') renderUsersTable();
+            if(tabId === 'settings') renderSettingsReasons();
         }
 
         function toggleSection(id) {
@@ -631,7 +1114,6 @@
             }
         }
 
-        // --- LEADER: PACKAGE ENTRY LOGIC ---
         function addPackageManual(e) {
             e.preventDefault();
             const input = document.getElementById('input-resi');
@@ -660,32 +1142,20 @@
                     scanner = new Html5Qrcode("reader");
                 }
                 
-                // Memaksa menggunakan kamera belakang (environment)
                 scanner.start(
                     { facingMode: "environment" },
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 100 },
-                        aspectRatio: 1.777778 // Rasio layar HP pada umumnya
-                    },
+                    { fps: 10, qrbox: { width: 250, height: 100 }, aspectRatio: 1.777778 },
                     (decodedText, decodedResult) => {
-                        // Jika berhasil scan
                         addPackageToList(decodedText);
-                        
-                        // Opsional: Getarkan HP jika didukung browser saat sukses scan
                         if (navigator.vibrate) navigator.vibrate(100); 
                     },
-                    (errorMessage) => {
-                        // Error wajar saat mencari barcode (abaikan)
-                    }
+                    (errorMessage) => { }
                 ).catch((err) => {
-                    // Gagal memulai kamera (tidak ada izin atau tidak ada kamera)
                     showToast('Gagal mengakses kamera! Pastikan izin diberikan.', 'error');
                     console.error(err);
                     container.classList.add('hidden');
                 });
             } else {
-                // Matikan kamera dengan aman
                 if(scanner && scanner.isScanning) {
                     scanner.stop().then(() => {
                         scanner.clear();
@@ -699,7 +1169,6 @@
             }
         }
 
-        // --- LEADER: PACKAGE STATUS & REASON LOGIC ---
         window.updateStatus = (id, status) => {
             const pkg = activePackages.find(p => p.id === id);
             if(pkg) {
@@ -740,9 +1209,9 @@
             }
         };
 
-        function renderPackages() {
+        function renderPackages(skipSave = false) {
             const list = document.getElementById('packages-list');
-            let successC = 0, failC = 0;
+            let successC = 0, failC = 0, fmC = 0;
             
             list.innerHTML = '';
             if(activePackages.length === 0) {
@@ -755,22 +1224,41 @@
                 activePackages.forEach((p, index) => {
                     if(p.status === 'sukses') successC++;
                     if(p.status === 'gagal') failC++;
+                    if(p.status === 'force_majeure') fmC++;
                     
                     const isS = p.status === 'sukses';
                     const isG = p.status === 'gagal';
+                    const isF = p.status === 'force_majeure';
                     const isP = p.status === 'pending';
                     
+                    let actionButtons = '';
+                    if (currentUser.role === 'admin') {
+                        let statusText = p.status.toUpperCase().replace('_', ' ');
+                        let statusColor = isS ? 'text-green-700 bg-green-100' : isG ? 'text-red-700 bg-red-100' : isF ? 'text-yellow-700 bg-yellow-100' : 'text-slate-600 bg-slate-100';
+                        actionButtons = `<span class="px-3 py-1.5 rounded-lg text-xs font-bold ${statusColor}">Status: ${statusText}</span>`;
+                    } else if (currentUser.role === 'asisten') {
+                        actionButtons = `
+                            <button onclick="updateStatus('${p.id}', 'sukses')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isS ? 'bg-green-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-green-100 hover:text-green-600'}"><i class="fa-solid fa-check"></i> Sukses</button>
+                            <button onclick="openReasonModal('${p.id}')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isG ? 'bg-red-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600'}"><i class="fa-solid fa-xmark"></i> Gagal</button>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <button onclick="updateStatus('${p.id}', 'sukses')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isS ? 'bg-green-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-green-100 hover:text-green-600'}"><i class="fa-solid fa-check"></i> Sukses</button>
+                            <button onclick="openReasonModal('${p.id}')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isG ? 'bg-red-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600'}"><i class="fa-solid fa-xmark"></i> Gagal</button>
+                            <button onclick="removePackage('${p.id}')" class="ml-1 text-slate-400 hover:text-red-500 p-2 rounded-lg transition-colors"><i class="fa-solid fa-trash"></i></button>
+                        `;
+                    }
+
                     const div = document.createElement('div');
-                    div.className = `flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 mb-2 rounded-xl border ${isS ? 'bg-green-50 border-green-200' : isG ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'} transition-colors`;
+                    div.className = `flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 mb-2 rounded-xl border ${isS ? 'bg-green-50 border-green-200' : isG ? 'bg-red-50 border-red-200' : isF ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-slate-200'} transition-colors`;
                     div.innerHTML = `
                         <div class="mb-2 sm:mb-0">
                             <p class="font-mono font-bold text-slate-700">${p.resi}</p>
                             ${isG ? `<p class="text-xs text-red-600 font-semibold mt-1"><i class="fa-solid fa-triangle-exclamation"></i> ${p.reason}</p>` : ''}
+                            ${isF ? `<p class="text-xs text-yellow-700 font-semibold mt-1"><i class="fa-solid fa-cloud-showers-heavy"></i> Force Majeure: ${p.reason}</p>` : ''}
                         </div>
                         <div class="flex items-center gap-1 w-full sm:w-auto">
-                            <button onclick="updateStatus('${p.id}', 'sukses')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isS ? 'bg-green-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-green-100 hover:text-green-600'}"><i class="fa-solid fa-check"></i> Sukses</button>
-                            <button onclick="openReasonModal('${p.id}')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isG ? 'bg-red-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600'}"><i class="fa-solid fa-xmark"></i> Gagal</button>
-                            <button onclick="removePackage('${p.id}')" class="ml-1 text-slate-400 hover:text-red-500 p-2 rounded-lg transition-colors"><i class="fa-solid fa-trash"></i></button>
+                            ${actionButtons}
                         </div>
                     `;
                     list.appendChild(div);
@@ -781,63 +1269,121 @@
             document.getElementById('stat-entry-total').innerText = activePackages.length;
             document.getElementById('stat-entry-sukses').innerText = successC;
             document.getElementById('stat-entry-gagal').innerText = failC;
+            document.getElementById('stat-entry-fm').innerText = fmC;
+            
+            if(skipSave !== true) {
+                saveDraft(true);
+            }
         }
 
-        // --- CALCULATION HELPER ---
+        window.selesaiOlehAsisten = async () => {
+            if(activePackages.length === 0) return;
+            
+            const pnd = activePackages.filter(p => p.status === 'pending');
+            const catatan = document.getElementById('info-catatan').value.trim();
+
+            if(pnd.length > 0 && catatan === '') { 
+                showToast(`Masih ada ${pnd.length} paket belum diupdate. Wajib isi Catatan/Kendala jika rute dihentikan!`, 'error');
+                document.getElementById('info-catatan').focus();
+                return; 
+            }
+
+            activePackages.forEach(p => {
+                if (p.status === 'pending' && catatan !== '') {
+                    p.status = 'force_majeure';
+                    p.reason = catatan;
+                }
+            });
+            renderPackages(); 
+
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('info-jam-selesai').value = `${hh}:${mm}`;
+
+            await saveDraft(false, true);
+            
+            showToast('Laporan berhasil diserahkan ke Leader! Menutup akses aman...', 'success');
+            
+            setTimeout(() => {
+                handleLogout();
+            }, 2000);
+        };
+
         function calculateTripDuration(start, end) {
             if(!start || !end) return '-';
             const [h1, m1] = start.split(':').map(Number);
             const [h2, m2] = end.split(':').map(Number);
             let diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-            if (diffMins < 0) diffMins += 24 * 60; // if crosses midnight
+            if (diffMins < 0) diffMins += 24 * 60; 
             const hrs = Math.floor(diffMins / 60);
             const mins = diffMins % 60;
             return `${hrs}j ${mins}m`;
         }
 
-        // --- LEADER: GENERATE REPORT ---
         async function generateReport() {
             if(activePackages.length === 0) { showToast('Tambahkan minimal 1 paket!', 'error'); return; }
             
             const pnd = activePackages.filter(p => p.status === 'pending');
             if(pnd.length > 0) { showToast(`Ada ${pnd.length} paket belum diupdate statusnya!`, 'error'); return; }
 
+            const smo = document.getElementById('info-jmo').value.trim().toUpperCase();
             const tgl = document.getElementById('info-tanggal').value;
             const unit = document.getElementById('info-unit').value;
             const nopol = document.getElementById('info-nopol').value.toUpperCase();
             const driver = document.getElementById('info-driver').value;
             const asisten = document.getElementById('info-asisten').value || '-';
-            const rit = document.getElementById('info-rit').value;
+            const rit = parseInt(document.getElementById('info-rit').value) || 1;
             const jMulai = document.getElementById('info-jam-mulai').value;
             const jSelesai = document.getElementById('info-jam-selesai').value;
+            const catatan = document.getElementById('info-catatan').value.trim();
             const durasi = calculateTripDuration(jMulai, jSelesai);
 
             if(!nopol || !driver || !jMulai || !jSelesai) {
-                showToast('Mohon lengkapi Nopol, Driver, dan Jam Pengantaran!', 'error');
-                toggleSection('form-info-body'); 
+                showToast('Mohon lengkapi Nopol, Driver, dan Jam Pengantaran (Mulai & Selesai)!', 'error');
+                const infoBody = document.getElementById('form-info-body');
+                if (infoBody.classList.contains('hidden')) toggleSection('form-info-body');
                 return;
+            }
+
+            let leaderNameText = currentUser.name;
+            let stagingText = currentUser.staging;
+            
+            if (currentUser.role === 'asisten') {
+                leaderNameText = currentUser.realLeaderName;
+            } else if (currentUser.role === 'admin' && adminSelectedDraftUserId) {
+                leaderNameText = originalLeaderName;
+                stagingText = originalLeaderStaging;
             }
 
             const resiSukses = activePackages.filter(p => p.status === 'sukses');
             const resiGagal = activePackages.filter(p => p.status === 'gagal');
+            const resiFM = activePackages.filter(p => p.status === 'force_majeure');
 
-            // Format WA Text (Perbaikan Formatting supaya rapi di WhatsApp)
-            let text = `*LAPORAN PENGANTARAN LOGISFAST*\n`;
-            text += `📅 Tanggal      : ${tgl}\n\n`;
+            let text = `*LAPORAN PENGANTARAN Big Parcel*\n`;
+            text += `📅 Tanggal             : ${tgl}\n\n`;
             
             text += `*INFO OPERASIONAL*\n`;
-            text += `🏢 Staging      : ${currentUser.staging}\n`;
-            text += `🚚 Unit         : ${unit} (${nopol})\n`;
-            text += `🔄 Ritase       : Ke-${rit}\n`;
-            text += `⏰ Waktu        : ${jMulai} - ${jSelesai} (Durasi: ${durasi})\n`;
-            text += `👥 Driver       : ${driver}\n`;
-            text += `👥 Asisten      : ${asisten}\n`;
-            text += `👤 Leader       : ${currentUser.name}\n\n`;
+            text += `🏢 Staging             : ${stagingText}\n`;
+            text += `🔢 No. SMO             : ${smo || '-'}\n`;
+            text += `🚚 Unit                    : ${unit} (${nopol})\n`;
+            text += `🔄 Ritase                : Ke-${rit}\n`;
+            text += `⏰ Waktu               : ${jMulai} - ${jSelesai} (${durasi})\n`;
+            text += `👥 Driver               : ${driver}\n`;
+            text += `👥 Asisten            : ${asisten}\n`;
             
-            text += `*RINGKASAN PAKET*\n`;
-            text += `📦 Total Bawa   : ${activePackages.length}\n`;
-            text += `✅ Sukses       : ${resiSukses.length}\n`;
-            text += `❌ Gagal        : ${resiGagal.length}\n\n`;
+            text += `👤 Leader             : ${leaderNameText}\n`;
+            
+            if(catatan) {
+                text += `⚠️ Kendala            : ${catatan}\n`;
+            }
+
+            text += `\n*RINGKASAN PAKET*\n`;
+            text += `📦 Total Bawa  : ${activePackages.length}\n`;
+            text += `✅ Sukses      : ${resiSukses.length}\n`;
+            text += `❌ Gagal       : ${resiGagal.length}\n`;
+            if (resiFM.length > 0) text += `⛈️ F. Majeure  : ${resiFM.length}\n`;
+            text += `\n`;
             
             if(resiSukses.length > 0) { 
                 text += `*DETAIL SUKSES (${resiSukses.length})*\n`;
@@ -847,31 +1393,37 @@
                 text += `*DETAIL GAGAL (${resiGagal.length})*\n`;
                 text += resiGagal.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n') + `\n\n`;
             }
-            text += `_Sistem LogisFast_`;
+            if(resiFM.length > 0) { 
+                text += `*DETAIL FORCE MAJEURE (${resiFM.length})*\n`;
+                text += resiFM.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n') + `\n\n`;
+            }
+            text += `_Sistem LogisFast https://bp-staging-orcin.vercel.app/_`;
 
             document.getElementById('modal-report-output').value = text;
 
-            // Simpan ke Supabase Database
             const newTrip = {
                 id: 'TRIP-' + Date.now(),
                 timestamp: Date.now(),
+                jmo: smo, // Pastikan ini SMO
                 date: tgl,
-                leader_name: currentUser.name,
-                staging: currentUser.staging,
+                leader_name: leaderNameText,
+                staging: stagingText,
                 unit: unit, nopol: nopol, driver: driver, asisten: asisten, rit: rit,
-                jam_mulai: jMulai, jam_selesai: jSelesai, durasi: durasi,
+                jam_mulai: jMulai, jam_selesai: jSelesai, durasi: durasi, catatan: catatan,
                 total: activePackages.length,
                 sukses: resiSukses.length,
                 gagal: resiGagal.length,
+                force_majeure: resiFM.length,
                 detail_sukses: resiSukses.map(p => p.resi),
-                detail_gagal: resiGagal.map(p => ({resi: p.resi, reason: p.reason}))
+                detail_gagal: resiGagal.map(p => ({resi: p.resi, reason: p.reason})),
+                detail_force_majeure: resiFM.map(p => ({resi: p.resi, reason: p.reason}))
             };
 
             showToast('Menyimpan ke Cloud Supabase...', 'success');
             const { error } = await supabaseClient.from('trips').insert([newTrip]);
 
             if(error) {
-                showToast('Gagal menyimpan Laporan ke Database!', 'error');
+                showToast('Gagal Simpan: ' + (error.message || 'Error Database'), 'error');
                 console.error(error);
                 return;
             }
@@ -889,42 +1441,60 @@
         window.selesaiReport = () => {
             document.getElementById('report-modal').classList.add('hidden');
             
-            document.getElementById('info-nopol').value = '';
-            document.getElementById('info-driver').value = '';
-            document.getElementById('info-asisten').value = '';
-            document.getElementById('info-jam-mulai').value = '';
-            document.getElementById('info-jam-selesai').value = '';
-            
-            const rit = document.getElementById('info-rit');
-            rit.value = parseInt(rit.value) + 1;
+            if (currentUser.role === 'asisten') {
+                supabaseClient.from('drafts').delete().eq('user_id', currentUser.id).then(() => {
+                    localStorage.removeItem('logisfast_draft_' + currentUser.id);
+                    handleLogout();
+                    showToast('Laporan Selesai! Sesi asisten telah ditutup otomatis.', 'success');
+                });
+            } else {
+                const draftUserIdToDelete = (currentUser.role === 'admin' && adminSelectedDraftUserId) 
+                    ? adminSelectedDraftUserId 
+                    : currentUser.id;
 
-            activePackages = [];
-            renderPackages();
-            showToast('Form berhasil di-reset untuk laporan baru!', 'success');
+                supabaseClient.from('drafts').delete().eq('user_id', draftUserIdToDelete).then(() => {
+                    localStorage.removeItem('logisfast_draft_' + currentUser.id);
+                    resetFormEntry();
+                    adminSelectedDraftUserId = null;
+                    originalLeaderName = '';
+                    originalLeaderStaging = '';
+                    const selectAdminJMO = document.getElementById('info-jmo-admin');
+                    if(selectAdminJMO) selectAdminJMO.value = '';
+                    
+                    if (currentUser.role === 'admin') {
+                        fetchActiveDraftsAdmin();
+                    }
+                });
+            }
         };
 
-        // --- DATA ROW ACTIONS (SALIN, EDIT, HAPUS) DARI DASHBOARD ---
         window.copyReportFromDb = (id) => {
             const t = dashboardTrips.find(x => x.id === id);
             if(!t) return;
             
-            // Format WA Text (Perbaikan Formatting supaya rapi di WhatsApp)
-            let text = `*LAPORAN PENGANTARAN LOGISFAST*\n`;
-            text += `📅 Tanggal      : ${t.date}\n\n`;
+            let text = `*LAPORAN PENGANTARAN Big Parcel*\n`;
+            text += `📅 Tanggal     : ${t.date}\n\n`;
             
             text += `*INFO OPERASIONAL*\n`;
-            text += `🏢 Staging      : ${t.staging}\n`;
-            text += `🚚 Unit         : ${t.unit} (${t.nopol})\n`;
-            text += `🔄 Ritase       : Ke-${t.rit}\n`;
-            text += `⏰ Waktu        : ${t.jamMulai} - ${t.jamSelesai} (Durasi: ${t.durasi})\n`;
-            text += `👥 Driver       : ${t.driver}\n`;
-            text += `👥 Asisten      : ${t.asisten}\n`;
-            text += `👤 Leader       : ${t.leaderName}\n\n`;
+            text += `🏢 Staging     : ${t.staging}\n`;
+            text += `🔢 No. SMO     : ${t.jmo || '-'}\n`;
+            text += `🚚 Unit        : ${t.unit} (${t.nopol})\n`;
+            text += `🔄 Ritase      : Ke-${t.rit}\n`;
+            text += `⏰ Waktu       : ${t.jamMulai} - ${t.jamSelesai} (${t.durasi})\n`;
+            text += `👥 Driver      : ${t.driver}\n`;
+            text += `👥 Asisten     : ${t.asisten}\n`;
+            text += `👤 Leader      : ${t.leaderName}\n`;
             
-            text += `*RINGKASAN PAKET*\n`;
-            text += `📦 Total Bawa   : ${t.total}\n`;
-            text += `✅ Sukses       : ${t.sukses}\n`;
-            text += `❌ Gagal        : ${t.gagal}\n\n`;
+            if(t.catatan) {
+                text += `⚠️ Kendala     : ${t.catatan}\n`;
+            }
+
+            text += `\n*RINGKASAN PAKET*\n`;
+            text += `📦 Total Bawa  : ${t.total}\n`;
+            text += `✅ Sukses      : ${t.sukses}\n`;
+            text += `❌ Gagal       : ${t.gagal}\n`;
+            if (t.force_majeure > 0) text += `⛈️ F. Majeure  : ${t.force_majeure}\n`;
+            text += `\n`;
             
             if(t.detailSukses && t.detailSukses.length > 0) {
                 text += `*DETAIL SUKSES (${t.detailSukses.length})*\n`;
@@ -934,6 +1504,10 @@
                 text += `*DETAIL GAGAL (${t.detailGagal.length})*\n`;
                 text += t.detailGagal.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n') + `\n\n`;
             }
+            if(t.detail_force_majeure && t.detail_force_majeure.length > 0) {
+                text += `*DETAIL FORCE MAJEURE (${t.detail_force_majeure.length})*\n`;
+                text += t.detail_force_majeure.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n') + `\n\n`;
+            }
             text += `_Sistem LogisFast https://bp-staging-orcin.vercel.app/_`;
 
             const el = document.createElement('textarea');
@@ -942,6 +1516,41 @@
             el.select(); document.execCommand('copy');
             document.body.removeChild(el);
             showToast('Teks Laporan berhasil disalin!', 'success');
+        };
+
+        window.viewReport = (id) => {
+            const t = dashboardTrips.find(x => x.id === id);
+            if(!t) return;
+            
+            document.getElementById('view-date').innerText = t.date;
+            document.getElementById('view-staging').innerText = t.staging;
+            document.getElementById('view-smo').innerText = t.jmo || '-';
+            document.getElementById('view-unit').innerText = `${t.unit} (${t.nopol})`;
+            document.getElementById('view-driver').innerText = t.driver;
+            document.getElementById('view-asisten').innerText = t.asisten || '-';
+            document.getElementById('view-jam').innerText = `${t.jamMulai} - ${t.jamSelesai} (${t.durasi})`;
+            document.getElementById('view-rit').innerText = `Ke-${t.rit}`;
+            document.getElementById('view-catatan').innerText = t.catatan || '-';
+            
+            document.getElementById('view-total').innerText = t.total;
+            document.getElementById('view-sukses').innerText = t.sukses;
+            document.getElementById('view-gagal').innerText = t.gagal;
+            document.getElementById('view-fm').innerText = t.force_majeure || 0;
+
+            const textSukses = (t.detailSukses || []).join('\n');
+            document.getElementById('view-detail-sukses').value = textSukses;
+
+            const textGagal = (t.detailGagal || []).map(p => `${p.resi} - ${p.reason}`).join('\n');
+            document.getElementById('view-detail-gagal').value = textGagal;
+
+            const textFM = (t.detail_force_majeure || []).map(p => `${p.resi} - ${p.reason}`).join('\n');
+            document.getElementById('view-detail-fm').value = textFM;
+
+            document.getElementById('view-report-modal').classList.remove('hidden');
+        };
+
+        window.closeViewReportModal = () => {
+            document.getElementById('view-report-modal').classList.add('hidden');
         };
 
         window.openEditReportModal = (id) => {
@@ -959,13 +1568,16 @@
             document.getElementById('edit-total').value = t.total;
             document.getElementById('edit-sukses').value = t.sukses;
             document.getElementById('edit-gagal').value = t.gagal;
+            document.getElementById('edit-fm').value = t.force_majeure || 0;
 
-            // Menampilkan Detail Resi ke Textarea
             const textSukses = (t.detailSukses || []).join('\n');
             document.getElementById('edit-detail-sukses').value = textSukses;
 
             const textGagal = (t.detailGagal || []).map(p => `${p.resi} - ${p.reason}`).join('\n');
             document.getElementById('edit-detail-gagal').value = textGagal;
+
+            const textFM = (t.detail_force_majeure || []).map(p => `${p.resi} - ${p.reason}`).join('\n');
+            document.getElementById('edit-detail-fm').value = textFM;
 
             document.getElementById('edit-report-modal').classList.remove('hidden');
         };
@@ -974,18 +1586,19 @@
             document.getElementById('edit-report-modal').classList.add('hidden');
         };
 
-        // Hitung ulang otomatis saat teks diketik
         window.recalculateEditMetrics = () => {
             const rawSukses = document.getElementById('edit-detail-sukses').value;
             const rawGagal = document.getElementById('edit-detail-gagal').value;
+            const rawFM = document.getElementById('edit-detail-fm').value;
             
-            // Pisahkan berdasarkan baris baru, hapus spasi kosong, lalu hitung yang tersisa
             const countS = rawSukses.split('\n').map(r => r.trim()).filter(r => r.length > 0).length;
             const countG = rawGagal.split('\n').map(r => r.trim()).filter(r => r.length > 0).length;
+            const countFM = rawFM.split('\n').map(r => r.trim()).filter(r => r.length > 0).length;
             
             document.getElementById('edit-sukses').value = countS;
             document.getElementById('edit-gagal').value = countG;
-            document.getElementById('edit-total').value = countS + countG;
+            document.getElementById('edit-fm').value = countFM;
+            document.getElementById('edit-total').value = countS + countG + countFM;
         };
 
         window.saveEditReport = async (e) => {
@@ -995,13 +1608,19 @@
             const jMulai = document.getElementById('edit-jam-mulai').value;
             const jSelesai = document.getElementById('edit-jam-selesai').value;
 
-            // Parsing resi sukses kembali jadi Array
             const rawSukses = document.getElementById('edit-detail-sukses').value;
             const detailSuksesBaru = rawSukses.split('\n').map(r => r.trim()).filter(r => r.length > 0);
             
-            // Parsing resi gagal (pisahkan nomor resi dan alasannya)
             const rawGagal = document.getElementById('edit-detail-gagal').value;
             const detailGagalBaru = rawGagal.split('\n').map(r => r.trim()).filter(r => r.length > 0).map(line => {
+                const parts = line.split('-');
+                const resi = parts[0].trim();
+                const reason = parts.length > 1 ? parts.slice(1).join('-').trim() : 'Tanpa Keterangan';
+                return { resi, reason };
+            });
+
+            const rawFM = document.getElementById('edit-detail-fm').value;
+            const detailFMBaru = rawFM.split('\n').map(r => r.trim()).filter(r => r.length > 0).map(line => {
                 const parts = line.split('-');
                 const resi = parts[0].trim();
                 const reason = parts.length > 1 ? parts.slice(1).join('-').trim() : 'Tanpa Keterangan';
@@ -1019,8 +1638,10 @@
                 total: parseInt(document.getElementById('edit-total').value),
                 sukses: parseInt(document.getElementById('edit-sukses').value),
                 gagal: parseInt(document.getElementById('edit-gagal').value),
+                force_majeure: parseInt(document.getElementById('edit-fm').value),
                 detail_sukses: detailSuksesBaru,
-                detail_gagal: detailGagalBaru
+                detail_gagal: detailGagalBaru,
+                detail_force_majeure: detailFMBaru
             };
             
             showToast('Memperbarui laporan ke database...', 'success');
@@ -1034,7 +1655,7 @@
 
             showToast('Laporan berhasil diperbarui!', 'success');
             closeEditReportModal();
-            renderDashboardData(); // Refresh Data Dashboard
+            renderDashboardData(); 
         };
 
         window.deleteReport = async (id) => {
@@ -1048,7 +1669,6 @@
             }
         };
 
-        // --- STREAMING_CHUNK:User Management (Admin) via Supabase ---
         async function renderUsersTable() {
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-blue-500"></i> Memuat Data User...</td></tr>`;
@@ -1087,21 +1707,22 @@
             const originalId = document.getElementById('user-original-id');
             const inputId = document.getElementById('user-id');
             const inputName = document.getElementById('user-name');
+            const inputRole = document.getElementById('user-role');
             const inputStaging = document.getElementById('user-staging');
             const inputPass = document.getElementById('user-pass');
 
             if (userId) {
-                // Ambil data user spesifik dari DB
                 const { data: user } = await supabaseClient.from('app_users').select('*').eq('id', userId).single();
                 if (user) {
                     formMode.value = 'edit';
                     originalId.value = user.id;
                     inputId.value = user.id;
                     inputName.value = user.name;
+                    if(inputRole) inputRole.value = user.role;
                     inputStaging.value = user.staging;
                     inputPass.value = user.pass;
                     if(user.id === currentUser.id) {
-                        inputId.readOnly = true; // Admin tak bisa ganti ID nya sendiri, cegah terkunci
+                        inputId.readOnly = true; 
                         inputId.classList.add('bg-slate-200');
                     } else {
                         inputId.readOnly = false;
@@ -1113,6 +1734,7 @@
                 originalId.value = '';
                 inputId.value = '';
                 inputName.value = '';
+                if(inputRole) inputRole.value = 'leader';
                 inputStaging.value = '';
                 inputPass.value = '';
                 inputId.readOnly = false;
@@ -1124,6 +1746,49 @@
 
         window.closeUserModal = () => {
             document.getElementById('user-modal').classList.add('hidden');
+        };
+
+        window.saveUser = async (e) => {
+            e.preventDefault();
+            const mode = document.getElementById('user-form-mode').value;
+            const originalId = document.getElementById('user-original-id').value;
+            
+            const userData = {
+                id: document.getElementById('user-id').value,
+                name: document.getElementById('user-name').value,
+                role: document.getElementById('user-role') ? document.getElementById('user-role').value : 'leader',
+                staging: document.getElementById('user-staging').value,
+                pass: document.getElementById('user-pass').value
+            };
+
+            let error = null;
+            if (mode === 'add') {
+                const res = await supabaseClient.from('app_users').insert([userData]);
+                error = res.error;
+            } else {
+                const res = await supabaseClient.from('app_users').update(userData).eq('id', originalId);
+                error = res.error;
+            }
+
+            if (error) {
+                showToast('Gagal menyimpan pengguna: ' + error.message, 'error');
+            } else {
+                showToast('Pengguna berhasil disimpan!', 'success');
+                closeUserModal();
+                renderUsersTable();
+            }
+        };
+
+        window.deleteUser = async (id) => {
+            if(confirm('Yakin ingin menghapus pengguna ini secara permanen?')) {
+                const { error } = await supabaseClient.from('app_users').delete().eq('id', id);
+                if (error) {
+                    showToast('Gagal menghapus pengguna!', 'error');
+                } else {
+                    showToast('Pengguna berhasil dihapus!', 'success');
+                    renderUsersTable();
+                }
+            }
         };
 
         window.togglePassword = () => {
@@ -1140,64 +1805,6 @@
             }
         };
 
-        window.saveUser = async (e) => {
-            e.preventDefault();
-            const mode = document.getElementById('user-form-mode').value;
-            const originalId = document.getElementById('user-original-id').value;
-            
-            const newId = document.getElementById('user-id').value.trim();
-            const newName = document.getElementById('user-name').value.trim();
-            const newStaging = document.getElementById('user-staging').value.trim();
-            const newPass = document.getElementById('user-pass').value.trim();
-
-            if(!newId || !newName || !newStaging || !newPass) {
-                showToast('Semua field wajib diisi!', 'error'); return;
-            }
-
-            if (mode === 'add') {
-                // Cek apakah ID sudah ada
-                const { data: exist } = await supabaseClient.from('app_users').select('id').eq('id', newId);
-                if (exist && exist.length > 0) {
-                    showToast('ID Login sudah digunakan, pilih ID lain!', 'error'); return;
-                }
-                
-                const { error } = await supabaseClient.from('app_users').insert([{ 
-                    id: newId, pass: newPass, role: 'leader', name: newName, staging: newStaging 
-                }]);
-                
-                if (error) { showToast('Gagal menambah Leader', 'error'); return; }
-                showToast('Akun Leader berhasil ditambahkan!', 'success');
-
-            } else if (mode === 'edit') {
-                if (newId !== originalId) {
-                    const { data: exist } = await supabaseClient.from('app_users').select('id').eq('id', newId);
-                    if (exist && exist.length > 0) {
-                        showToast('ID Login baru sudah digunakan oleh orang lain!', 'error'); return;
-                    }
-                }
-                
-                const { error } = await supabaseClient.from('app_users').update({ 
-                    id: newId, pass: newPass, name: newName, staging: newStaging 
-                }).eq('id', originalId);
-
-                if (error) { showToast('Gagal memperbarui User', 'error'); return; }
-                showToast('Data Leader berhasil diperbarui!', 'success');
-            }
-
-            closeUserModal();
-            renderUsersTable();
-        };
-
-        window.deleteUser = async (userId) => {
-            if(confirm(`Yakin ingin menghapus akun pengguna dengan ID: ${userId} dari Cloud?`)) {
-                const { error } = await supabaseClient.from('app_users').delete().eq('id', userId);
-                if(error) { showToast('Gagal hapus User', 'error'); return; }
-                showToast('Akun berhasil dihapus!', 'success');
-                renderUsersTable();
-            }
-        };
-
-        // --- STREAMING_CHUNK:Admin Analytics and Dashboard ---
         async function renderDashboardData() {
             const startStr = document.getElementById('filter-date-start').value;
             const endStr = document.getElementById('filter-date-end').value;
@@ -1205,7 +1812,6 @@
             const tbody = document.getElementById('dashboard-table-body');
             tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-blue-500"></i> Memuat Data dari Cloud...</td></tr>`;
             
-            // Filter by selected date range from Supabase
             const { data: db, error } = await supabaseClient.from('trips')
                 .select('*')
                 .gte('date', startStr)
@@ -1216,7 +1822,6 @@
 
             rawDashboardData = db || [];
 
-            // Update pilihan Dropdown Staging secara dinamis sesuai data yang ditarik
             const stagingSelect = document.getElementById('filter-staging');
             const currentSelection = stagingSelect.value;
             const uniqueStagings = [...new Set(rawDashboardData.map(t => t.staging))].sort();
@@ -1229,7 +1834,6 @@
                 stagingSelect.appendChild(opt);
             });
 
-            // Kembalikan pilihan staging sebelumnya jika masih tersedia di data tanggal baru
             if (uniqueStagings.includes(currentSelection)) {
                 stagingSelect.value = currentSelection;
             }
@@ -1244,23 +1848,22 @@
             const isAdmin = currentUser.role === 'admin';
             const isVisitor = currentUser.role === 'visitor';
             
-            // Saring data berdasarkan Dropdown Staging (jika bukan "Semua Staging")
             let filteredDb = rawDashboardData;
             if (selectedStaging !== 'ALL') {
                 filteredDb = rawDashboardData.filter(t => t.staging === selectedStaging);
             }
 
-            // Cache & Map Data
             dashboardTrips = filteredDb.map(t => ({
-                id: t.id, timestamp: t.timestamp, date: t.date,
+                id: t.id, timestamp: t.timestamp, date: t.date, jmo: t.jmo,
                 leaderName: t.leader_name, staging: t.staging,
                 unit: t.unit, nopol: t.nopol, driver: t.driver, asisten: t.asisten,
                 rit: t.rit, jamMulai: t.jam_mulai, jamSelesai: t.jam_selesai,
-                durasi: t.durasi, total: t.total, sukses: t.sukses, gagal: t.gagal,
-                detailSukses: t.detail_sukses, detailGagal: t.detail_gagal
+                durasi: t.durasi, catatan: t.catatan, total: t.total, sukses: t.sukses, gagal: t.gagal,
+                force_majeure: t.force_majeure, // <-- Data FM baru
+                detailSukses: t.detail_sukses, detailGagal: t.detail_gagal,
+                detail_force_majeure: t.detail_force_majeure // <-- Detail FM baru
             }));
 
-            // Calc Stats
             let sumArmada = new Set(dashboardTrips.map(t => t.nopol)).size;
             let sumSukses = 0, sumGagal = 0;
             let sumPaket = 0;
@@ -1298,6 +1901,7 @@
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-1.5">
                                 <button onclick="copyReportFromDb('${t.id}')" title="Salin Text WA" class="text-green-600 bg-green-50 hover:bg-green-100 p-2 rounded-lg transition-colors"><i class="fa-brands fa-whatsapp text-lg"></i></button>
+                                <button onclick="viewReport('${t.id}')" title="Lihat Detail Laporan" class="text-indigo-600 bg-indigo-50 hover:bg-indigo-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-eye"></i></button>
                                 ${!isVisitor ? `<button onclick="openEditReportModal('${t.id}')" title="Edit Laporan" class="text-blue-600 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-pen"></i></button>` : ''}
                                 ${isAdmin ? `<button onclick="deleteReport('${t.id}')" title="Hapus Permanen" class="text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-trash"></i></button>` : ''}
                             </div>
@@ -1307,18 +1911,15 @@
                 });
             }
 
-            // Update DOM Stats
             document.getElementById('stat-dash-armada').innerText = sumArmada;
             document.getElementById('stat-dash-paket').innerText = sumPaket;
             document.getElementById('stat-dash-sukses').innerText = sumSukses;
             document.getElementById('stat-dash-gagal').innerText = sumGagal;
 
-            // Render Charts
             renderCharts(dashboardTrips, startStr, endStr, ssStats);
         }
 
         function renderCharts(dbData, startStr, endStr, ssStats) {
-            // 1. Staging (SS) Bar Chart (Horizontal)
             const ctxV = document.getElementById('vehicleChart').getContext('2d');
             if(chartInstances.vehicle) chartInstances.vehicle.destroy();
             
@@ -1337,15 +1938,15 @@
                     }]
                 },
                 options: { 
-                    indexAxis: 'y', // Mengubah menjadi batang horizontal
+                    indexAxis: 'y',
                     responsive: true, 
                     maintainAspectRatio: false, 
                     scales: {
-                        x: { display: false, grid: { display: false } }, // Sembunyikan garis & nilai X
-                        y: { grid: { display: false }, border: { display: false } } // Sembunyikan garis Y
+                        x: { display: false, grid: { display: false } },
+                        y: { grid: { display: false }, border: { display: false } }
                     },
                     plugins: { 
-                        legend: { display: false }, // Sembunyikan legend karena label sudah di sumbu Y
+                        legend: { display: false }, 
                         datalabels: {
                             color: '#475569',
                             anchor: 'end',
@@ -1354,11 +1955,10 @@
                             formatter: (value) => { return Object.keys(ssStats).length > 0 && value > 0 ? value : ''; }
                         }
                     },
-                    layout: { padding: { right: 35 } } // Memberi ruang agar angka tidak terpotong di ujung kanan
+                    layout: { padding: { right: 35 } }
                 }
             });
 
-            // 2. Trend Line Chart (Date Range)
             const ctxT = document.getElementById('trendChart').getContext('2d');
             if(chartInstances.trend) chartInstances.trend.destroy();
 
@@ -1393,7 +1993,7 @@
                     responsive: true, maintainAspectRatio: false,
                     scales: { 
                         y: { display: false, grid: { display: false } }, 
-                        x: { grid: { display: false }, border: { display: false } } // Sembunyikan garis X sepenuhnya
+                        x: { grid: { display: false }, border: { display: false } } 
                     },
                     plugins: {
                         datalabels: {
@@ -1413,7 +2013,84 @@
             });
         }
 
-        // --- EXPORT CSV ---
+        window.fetchReasons = async () => {
+            const { data, error } = await supabaseClient.from('delivery_reasons').select('*').order('id', {ascending: true});
+            if (!error && data) {
+                dynamicReasons = data;
+            } else {
+                dynamicReasons = [
+                    {id: 1, reason_text: 'Toko / Kantor Tutup'},
+                    {id: 2, reason_text: 'Alamat Tidak Ditemukan'},
+                    {id: 3, reason_text: 'Pelanggan Menolak / Batal'},
+                    {id: 4, reason_text: 'Pindah Alamat'},
+                    {id: 5, reason_text: 'Kendala Unit / Cuaca Buruk'}
+                ];
+            }
+            
+            const container = document.getElementById('dynamic-reasons-container');
+            if(container) {
+                container.innerHTML = '';
+                dynamicReasons.forEach(r => {
+                    const btn = document.createElement('button');
+                    btn.className = 'text-left px-4 py-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-600 font-bold text-slate-700 transition-colors text-sm';
+                    btn.innerText = r.reason_text;
+                    btn.onclick = () => saveReason(r.reason_text);
+                    container.appendChild(btn);
+                });
+            }
+        };
+
+        window.renderSettingsReasons = () => {
+            const list = document.getElementById('settings-reasons-list');
+            list.innerHTML = '';
+            if(dynamicReasons.length === 0) {
+                list.innerHTML = '<p class="text-sm text-slate-500">Belum ada data alasan.</p>';
+            } else {
+                dynamicReasons.forEach(r => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center p-3 bg-white border border-slate-200 rounded-xl mb-2';
+                    div.innerHTML = `
+                        <span class="text-sm font-semibold text-slate-700">${r.reason_text}</span>
+                        <button onclick="deleteReason(${r.id})" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"><i class="fa-solid fa-trash"></i></button>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+        };
+
+        window.addReasonForm = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('input-new-reason');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            input.disabled = true;
+            const { error } = await supabaseClient.from('delivery_reasons').insert([{reason_text: text}]);
+            input.disabled = false;
+            
+            if(error) {
+                showToast('Gagal menambahkan alasan.', 'error');
+            } else {
+                showToast('Alasan berhasil ditambahkan!', 'success');
+                input.value = '';
+                await fetchReasons();
+                renderSettingsReasons();
+            }
+        };
+
+        window.deleteReason = async (id) => {
+            if(confirm('Hapus alasan ini secara permanen?')) {
+                const { error } = await supabaseClient.from('delivery_reasons').delete().eq('id', id);
+                if(error) {
+                    showToast('Gagal menghapus alasan.', 'error');
+                } else {
+                    showToast('Alasan berhasil dihapus!', 'success');
+                    await fetchReasons();
+                    renderSettingsReasons();
+                }
+            }
+        };
+
         window.exportToCSV = () => {
             const startStr = document.getElementById('filter-date-start').value;
             const endStr = document.getElementById('filter-date-end').value;
@@ -1423,13 +2100,13 @@
                 showToast("Tidak ada data untuk diunduh pada rentang tanggal ini.", "error"); return;
             }
 
-            let csv = "Tanggal,Waktu Submit,Leader,Staging,Unit,Nopol,Driver,Asisten,Ritase,Jam Mulai,Jam Selesai,Durasi,Total Paket,Sukses,Gagal\n";
+            let csv = "Tanggal,Waktu Submit,Leader,Staging,Unit,Nopol,Driver,Asisten,Ritase,Jam Mulai,Jam Selesai,Durasi,Total Paket,Sukses,Gagal,F_Majeure\n";
             data.forEach(d => {
                 const timeStr = new Date(d.timestamp).toLocaleTimeString('id-ID');
                 const row = [
                     d.date, timeStr, `"${d.leaderName}"`, d.staging, d.unit, d.nopol,
                     `"${d.driver}"`, `"${d.asisten}"`, d.rit, d.jamMulai, d.jamSelesai, d.durasi,
-                    d.total, d.sukses, d.gagal
+                    d.total, d.sukses, d.gagal, d.force_majeure || 0
                 ];
                 csv += row.join(",") + "\n";
             });
@@ -1445,7 +2122,6 @@
             showToast("Berhasil mengunduh Laporan CSV", "success");
         };
 
-        // --- TOAST NOTIFICATION ---
         function showToast(msg, type = 'success') {
             const t = document.createElement('div');
             const icon = type === 'success' ? '<i class="fa-solid fa-circle-check text-green-500 text-xl"></i>' : '<i class="fa-solid fa-circle-exclamation text-red-500 text-xl"></i>';
