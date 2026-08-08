@@ -302,6 +302,23 @@
                                         <input type="text" id="info-catatan" placeholder="Ketik jika macet, banjir, dsb..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:bg-white outline-none transition-all">
                                     </div>
                                 </div>
+
+                                <!-- Info Link Kurir -->
+                                <div class="mt-5 bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                                    <div class="flex gap-3 items-start">
+                                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                                            <i class="fa-solid fa-link"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Akses Aplikasi Kurir (Asisten)</p>
+                                            <p class="text-[11px] text-slate-500 mt-1 font-medium">Arahkan asisten untuk buka <a href="https://bp-aja-kurir.vercel.app/" target="_blank" class="text-blue-600 font-bold hover:underline">https://bp-aja-kurir.vercel.app/</a> lalu masukkan <b>No. SMO</b> di atas sebagai kunci masuk.</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="copyKurirLink()" class="w-full sm:w-auto shrink-0 bg-white border border-slate-200 hover:border-blue-300 text-blue-600 hover:bg-blue-50 px-4 py-2.5 rounded-xl text-[10px] font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95">
+                                        <i class="fa-regular fa-copy text-sm"></i> Salin Info ke WA
+                                    </button>
+                                </div>
+
                             </div>
                         </div>
 
@@ -385,9 +402,6 @@
                                 <p class="text-[11px] font-medium text-slate-500 mt-0.5">Pastikan status semua resi di atas telah di-update sebelum simpan.</p>
                             </div>
                             <div class="w-full lg:w-auto flex flex-col sm:flex-row gap-3">
-                                <button onclick="resetFormEntry()" id="btn-reset-form" class="w-full sm:w-auto bg-white hover:bg-red-50 text-red-500 border-2 border-red-100 px-5 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm">
-                                    <i class="fa-solid fa-rotate-right"></i> Reset
-                                </button>
                                 <button onclick="refreshDraftData()" id="btn-refresh-data" class="w-full sm:w-auto bg-blue-50 hover:bg-blue-100 text-blue-600 px-5 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm">
                                     <i class="fa-solid fa-rotate"></i> Sinkron Data
                                 </button>
@@ -748,8 +762,23 @@
         </div>
     </div>
 
+    <!-- MODAL: KONFIRMASI GLOBAL (Pengganti Confirm Browser) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[250] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 px-5">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform transition-transform duration-300 scale-95 flex flex-col p-6 text-center relative">
+            <div class="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-inner">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="confirm-title" class="text-xl font-black text-slate-800 mb-2">Konfirmasi</h3>
+            <p id="confirm-message" class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">Apakah Anda yakin?</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 py-3.5 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all text-sm">Batal</button>
+                <button onclick="executeConfirm()" class="flex-1 py-3.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 active:scale-95 shadow-md transition-all text-sm">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST NOTIFICATION -->
-    <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
+    <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[300] flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
 
     <script>
         // --- SUPABASE CONFIGURATION ---
@@ -768,6 +797,7 @@
         let adminSelectedDraftUserId = null; 
         let originalLeaderName = ''; 
         let originalLeaderStaging = '';
+        let confirmActionCallback = null; // Menyimpan aksi untuk modal konfirmasi
 
         Chart.register(ChartDataLabels);
         const todayStr = new Date().toISOString().split('T')[0];
@@ -807,6 +837,38 @@
                 modal.classList.add('hidden');
             }, 300); // Wait for transition
         }
+
+        // FUNGSI UNTUK MODAL KONFIRMASI GLOBAL
+        window.openConfirmModal = (title, message, callback) => {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-message').innerText = message;
+            confirmActionCallback = callback;
+            
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            void modal.offsetWidth;
+            modal.classList.remove('opacity-0');
+            modal.children[0].classList.remove('scale-95', 'translate-y-full');
+            modal.children[0].classList.add('scale-100');
+        };
+
+        window.closeConfirmModal = () => {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('opacity-0');
+            modal.children[0].classList.remove('scale-100');
+            modal.children[0].classList.add('scale-95');
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                confirmActionCallback = null; 
+            }, 300);
+        };
+
+        window.executeConfirm = () => {
+            if (confirmActionCallback) {
+                confirmActionCallback();
+            }
+            closeConfirmModal();
+        };
 
         window.switchLoginTab = (type) => {
             const tabs = ['leader', 'visitor'];
@@ -973,7 +1035,6 @@
             document.getElementById('btn-buat-laporan').classList.add('hidden');
             document.getElementById('btn-simpan-draf').classList.add('hidden');
             document.getElementById('btn-refresh-data').classList.add('hidden');
-            document.getElementById('btn-reset-form').classList.add('hidden');
 
             const fields = ['info-tanggal', 'info-unit', 'info-nopol', 'info-driver', 'info-asisten', 'info-rit', 'info-jam-mulai', 'info-jam-selesai', 'info-catatan'];
             fields.forEach(id => {
@@ -990,7 +1051,6 @@
             document.getElementById('btn-buat-laporan').classList.remove('hidden');
             document.getElementById('btn-simpan-draf').classList.remove('hidden');
             document.getElementById('btn-refresh-data').classList.remove('hidden');
-            document.getElementById('btn-reset-form').classList.remove('hidden');
 
             const fields = ['info-tanggal', 'info-unit', 'info-nopol', 'info-driver', 'info-asisten', 'info-rit', 'info-jmo', 'info-jam-mulai', 'info-jam-selesai', 'info-catatan'];
             fields.forEach(id => {
@@ -1325,9 +1385,15 @@
         };
 
         window.clearPackages = () => {
-            if(confirm('Yakin ingin hapus semua daftar resi?')) {
-                activePackages = []; renderPackages();
-            }
+            openConfirmModal(
+                'Kosongkan Daftar', 
+                'Yakin ingin menghapus semua daftar resi yang telah discan?', 
+                () => {
+                    activePackages = []; 
+                    renderPackages();
+                    showToast('Daftar resi berhasil dikosongkan.', 'success');
+                }
+            );
         };
 
         function renderPackages(skipSave = false) {
@@ -1477,7 +1543,7 @@
                 text += `*DETAIL FORCE MAJEURE (${resiFM.length})*\n`;
                 text += resiFM.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n') + `\n\n`;
             }
-            text += `_Sistem BP Aja (Big Parcel Anteraja)_`;
+            text += `_Sistem BP Aja https://bp-staging-orcin.vercel.app/_`;
 
             document.getElementById('modal-report-output').value = text;
 
@@ -1535,6 +1601,18 @@
                 
                 if (currentUser.role === 'admin') fetchActiveDraftsAdmin();
             });
+        };
+
+        window.copyKurirLink = () => {
+            const smo = document.getElementById('info-jmo').value.trim().toUpperCase() || '[Ketik Dulu No. SMO]';
+            const textToCopy = `Halo Asisten/Kurir,\n\nSilakan buka aplikasi pengantaran BP Aja melalui link berikut:\n🌐 https://bp-aja-kurir.vercel.app/\n\n🔑 Masukkan Kode SMO: *${smo}*\n\nSelamat bertugas!`;
+            
+            const el = document.createElement('textarea');
+            el.value = textToCopy;
+            document.body.appendChild(el);
+            el.select(); document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast('Link & Kode SMO berhasil disalin!', 'success');
         };
 
         window.copyReportFromDb = (id) => {
@@ -1712,13 +1790,20 @@
             renderDashboardData(); 
         };
 
-        window.deleteReport = async (id) => {
-            if(confirm('Hapus laporan ini secara permanen dari Cloud?')) {
-                const { error } = await supabaseClient.from('trips').delete().eq('id', id);
-                if (error) { showToast('Gagal menghapus laporan!', 'error'); return; }
-                showToast('Laporan berhasil dihapus!', 'success');
-                renderDashboardData();
-            }
+        window.deleteReport = (id) => {
+            openConfirmModal(
+                'Hapus Laporan', 
+                'Apakah Anda yakin ingin menghapus laporan ini secara permanen dari Cloud?', 
+                async () => {
+                    const { error } = await supabaseClient.from('trips').delete().eq('id', id);
+                    if (error) { 
+                        showToast('Gagal menghapus laporan!', 'error'); 
+                        return; 
+                    }
+                    showToast('Laporan berhasil dihapus!', 'success');
+                    renderDashboardData();
+                }
+            );
         };
 
         async function renderUsersTable() {
@@ -1817,11 +1902,20 @@
             }
         };
 
-        window.deleteUser = async (id) => {
-            if(confirm('Hapus pengguna ini secara permanen?')) {
-                const { error } = await supabaseClient.from('app_users').delete().eq('id', id);
-                if (!error) { showToast('Pengguna dihapus!', 'success'); renderUsersTable(); }
-            }
+        window.deleteUser = (id) => {
+            openConfirmModal(
+                'Hapus Pengguna', 
+                'Apakah Anda yakin ingin menghapus pengguna ini secara permanen?', 
+                async () => {
+                    const { error } = await supabaseClient.from('app_users').delete().eq('id', id);
+                    if (!error) { 
+                        showToast('Pengguna berhasil dihapus!', 'success'); 
+                        renderUsersTable(); 
+                    } else {
+                        showToast('Gagal menghapus pengguna!', 'error');
+                    }
+                }
+            );
         };
 
         window.togglePassword = () => {
@@ -2068,11 +2162,21 @@
             else { showToast('Alasan ditambahkan!', 'success'); input.value = ''; await fetchReasons(); renderSettingsReasons(); }
         };
 
-        window.deleteReason = async (id) => {
-            if(confirm('Hapus alasan ini secara permanen?')) {
-                const { error } = await supabaseClient.from('delivery_reasons').delete().eq('id', id);
-                if(!error) { showToast('Alasan dihapus!', 'success'); await fetchReasons(); renderSettingsReasons(); }
-            }
+        window.deleteReason = (id) => {
+            openConfirmModal(
+                'Hapus Alasan', 
+                'Apakah Anda yakin ingin menghapus alasan gagal ini secara permanen?', 
+                async () => {
+                    const { error } = await supabaseClient.from('delivery_reasons').delete().eq('id', id);
+                    if(!error) { 
+                        showToast('Alasan berhasil dihapus!', 'success'); 
+                        await fetchReasons(); 
+                        renderSettingsReasons(); 
+                    } else {
+                        showToast('Gagal menghapus alasan!', 'error');
+                    }
+                }
+            );
         };
 
         window.exportToCSV = () => {
