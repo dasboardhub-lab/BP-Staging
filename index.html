@@ -424,7 +424,12 @@
                                 <h2 class="text-lg font-extrabold text-slate-800">Analitik & Riwayat</h2>
                                 <p class="text-[11px] font-medium text-slate-500 mt-0.5">Pemantauan data pengantaran real-time.</p>
                             </div>
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto flex-wrap justify-end">
+                                <!-- FITUR SEARCH -->
+                                <div class="relative w-full sm:w-auto">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i></div>
+                                    <input type="text" id="filter-search" onkeyup="processAndRenderDashboard()" class="w-full sm:w-48 pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:font-medium placeholder:text-slate-400" placeholder="Cari Resi, SMO, Kurir...">
+                                </div>
                                 <div class="relative w-full sm:w-auto">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-location-dot text-slate-400 text-xs"></i></div>
                                     <select id="filter-staging" onchange="processAndRenderDashboard()" class="w-full sm:w-48 pl-8 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-blue-500/20 outline-none">
@@ -1579,7 +1584,9 @@
 
         window.copyReportModal = () => {
             const el = document.getElementById('modal-report-output');
-            el.select(); document.execCommand('copy');
+            el.select(); 
+            el.setSelectionRange(0, 99999); // Fix kompatibilitas copy di HP
+            document.execCommand('copy');
             showToast('Teks laporan berhasil disalin!', 'success');
         };
 
@@ -1604,13 +1611,47 @@
         };
 
         window.copyKurirLink = () => {
-            const smo = document.getElementById('info-jmo').value.trim().toUpperCase() || '[Ketik Dulu No. SMO]';
+            const smo = document.getElementById('info-jmo').value.trim().toUpperCase();
+            
+            if (!smo) {
+                showToast('Silakan isi No. SMO terlebih dahulu!', 'error');
+                document.getElementById('info-jmo').focus();
+                return;
+            }
+
+            // Validasi: Cek apakah Leader sudah menyimpan draf ini
+            const savedDraftStr = localStorage.getItem('logisfast_draft_' + currentUser.id);
+            let isSaved = false;
+            
+            if (savedDraftStr) {
+                const savedDraft = JSON.parse(savedDraftStr);
+                if (savedDraft.jmo === smo) isSaved = true;
+            }
+
+            // Jika belum di-save drafnya, cegah salin & arahkan ke tombol Simpan
+            if (!isSaved) {
+                showToast('Klik "Simpan Draf" terlebih dahulu agar data masuk ke sistem Kurir!', 'error');
+                
+                // Beri efek kedip (highlight) pada tombol Simpan Draf untuk memandu Leader
+                const btnSimpan = document.getElementById('btn-simpan-draf');
+                if (btnSimpan) {
+                    btnSimpan.classList.add('ring-4', 'ring-blue-400', 'animate-pulse');
+                    setTimeout(() => btnSimpan.classList.remove('ring-4', 'ring-blue-400', 'animate-pulse'), 3000);
+                }
+                return;
+            }
+
             const textToCopy = `Halo Asisten/Kurir,\n\nSilakan buka aplikasi pengantaran BP Aja melalui link berikut:\n🌐 https://bp-aja-kurir.vercel.app/\n\n🔑 Masukkan Kode SMO: *${smo}*\n\nSelamat bertugas!`;
             
             const el = document.createElement('textarea');
             el.value = textToCopy;
+            el.setAttribute('readonly', ''); // Mencegah keyboard HP muncul
+            el.style.position = 'absolute';
+            el.style.left = '-9999px'; // Sembunyikan elemen tanpa merusak sistem copy
             document.body.appendChild(el);
-            el.select(); document.execCommand('copy');
+            el.select(); 
+            el.setSelectionRange(0, 99999); // Fix kompatibilitas copy di HP
+            document.execCommand('copy');
             document.body.removeChild(el);
             showToast('Link & Kode SMO berhasil disalin!', 'success');
         };
@@ -1651,12 +1692,17 @@
                 text += `*DETAIL FORCE MAJEURE (${t.detail_force_majeure.length})*\n`;
                 text += t.detail_force_majeure.map((p,i) => `${i+1}. ${p.resi} - ${p.reason}`).join('\n') + `\n\n`;
             }
-            text += `_Sistem BP Aja (Big Parcel Anteraja)_`;
+            text += `_Sistem BP Aja_`;
 
             const el = document.createElement('textarea');
             el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
             document.body.appendChild(el);
-            el.select(); document.execCommand('copy');
+            el.select(); 
+            el.setSelectionRange(0, 99999); // Fix kompatibilitas copy di HP
+            document.execCommand('copy');
             document.body.removeChild(el);
             showToast('Teks Laporan berhasil disalin!', 'success');
         };
@@ -1963,11 +2009,35 @@
             const startStr = document.getElementById('filter-date-start').value;
             const endStr = document.getElementById('filter-date-end').value;
             const selectedStaging = document.getElementById('filter-staging').value;
+            const searchQuery = document.getElementById('filter-search') ? document.getElementById('filter-search').value.toLowerCase().trim() : '';
             const isAdmin = currentUser.role === 'admin';
             const isVisitor = currentUser.role === 'visitor';
             
             let filteredDb = rawDashboardData;
-            if (selectedStaging !== 'ALL') filteredDb = rawDashboardData.filter(t => t.staging === selectedStaging);
+            
+            if (selectedStaging !== 'ALL') {
+                filteredDb = filteredDb.filter(t => t.staging === selectedStaging);
+            }
+
+            // Logika Pencarian Cerdas
+            if (searchQuery !== '') {
+                filteredDb = filteredDb.filter(t => {
+                    const matchSMO = t.jmo && t.jmo.toLowerCase().includes(searchQuery);
+                    const matchDriver = t.driver && t.driver.toLowerCase().includes(searchQuery);
+                    const matchAsisten = t.asisten && t.asisten.toLowerCase().includes(searchQuery);
+                    const matchNopol = t.nopol && t.nopol.toLowerCase().includes(searchQuery);
+                    
+                    // Cari di dalam daftar resi sukses
+                    const matchSukses = t.detail_sukses && t.detail_sukses.some(resi => resi.toLowerCase().includes(searchQuery));
+                    
+                    // Cari di dalam daftar resi gagal & FM (karena formatnya array of object {resi, reason})
+                    const matchGagal = t.detail_gagal && t.detail_gagal.some(p => p.resi.toLowerCase().includes(searchQuery));
+                    const matchFM = t.detail_force_majeure && t.detail_force_majeure.some(p => p.resi.toLowerCase().includes(searchQuery));
+
+                    // Jika salah satu cocok, tampilkan data laporan ini
+                    return matchSMO || matchDriver || matchAsisten || matchNopol || matchSukses || matchGagal || matchFM;
+                });
+            }
 
             dashboardTrips = filteredDb.map(t => ({
                 id: t.id, timestamp: t.timestamp, date: t.date, jmo: t.jmo,
@@ -1997,40 +2067,53 @@
 
                     const timeStr = new Date(t.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
                     
-                    // Card Based Design for Dashboard History
                     const div = document.createElement('div');
-                    div.className = 'bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4 transition-all hover:shadow-md';
+                    div.className = 'bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-4 transition-all hover:shadow-md';
                     
                     let actionsHtml = `
-                        <button onclick="copyReportFromDb('${t.id}')" class="flex-1 xl:flex-none text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-2.5 rounded-xl transition-colors font-bold text-xs flex justify-center items-center gap-1.5"><i class="fa-brands fa-whatsapp text-sm"></i> Salin</button>
-                        <button onclick="viewReport('${t.id}')" class="flex-1 xl:flex-none text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-2.5 rounded-xl transition-colors font-bold text-xs flex justify-center items-center gap-1.5"><i class="fa-solid fa-eye"></i> Detail</button>
+                        <button onclick="copyReportFromDb('${t.id}')" class="flex-1 md:flex-none text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-2.5 rounded-xl transition-colors font-bold text-[11px] flex justify-center items-center gap-1.5"><i class="fa-brands fa-whatsapp text-sm"></i> Salin</button>
+                        <button onclick="viewReport('${t.id}')" class="flex-1 md:flex-none text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-2.5 rounded-xl transition-colors font-bold text-[11px] flex justify-center items-center gap-1.5"><i class="fa-solid fa-eye"></i> Detail</button>
                     `;
-                    if(!isVisitor) actionsHtml += `<button onclick="openEditReportModal('${t.id}')" class="flex-1 xl:flex-none text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-2.5 rounded-xl transition-colors font-bold text-xs flex justify-center items-center gap-1.5"><i class="fa-solid fa-pen"></i> Edit</button>`;
-                    if(isAdmin) actionsHtml += `<button onclick="deleteReport('${t.id}')" class="flex-1 xl:flex-none text-red-500 bg-red-50 hover:bg-red-100 px-3 py-2.5 rounded-xl transition-colors font-bold text-xs flex justify-center items-center gap-1.5"><i class="fa-solid fa-trash"></i></button>`;
+                    if(!isVisitor) actionsHtml += `<button onclick="openEditReportModal('${t.id}')" class="flex-1 md:flex-none text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-2.5 rounded-xl transition-colors font-bold text-[11px] flex justify-center items-center gap-1.5"><i class="fa-solid fa-pen"></i> Edit</button>`;
+                    if(isAdmin) actionsHtml += `<button onclick="deleteReport('${t.id}')" class="flex-none text-red-500 bg-red-50 hover:bg-red-100 px-3 py-2.5 rounded-xl transition-colors font-bold text-[11px] flex justify-center items-center"><i class="fa-solid fa-trash"></i></button>`;
 
                     div.innerHTML = `
-                        <!-- Info Kiri -->
-                        <div class="flex flex-col gap-1 xl:w-1/4">
-                            <div class="flex items-center gap-2"><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase tracking-wider">${timeStr}</span><span class="text-xs font-bold text-slate-800">${t.date}</span></div>
-                            <p class="font-extrabold text-slate-800 text-sm uppercase mt-1">${t.staging}</p>
-                            <p class="text-[11px] text-slate-500 font-medium line-clamp-1">${t.leaderName}</p>
+                        <!-- Baris 1: Informasi Dasar -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 border-b border-slate-50 pb-3">
+                            <div class="flex flex-col">
+                                <span class="text-[9px] uppercase font-bold text-slate-400">Tanggal & Staging</span>
+                                <span class="text-xs font-bold text-slate-800 mt-1">${t.date} <span class="bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded text-[9px] font-black ml-1">${timeStr}</span></span>
+                                <span class="text-[10px] font-extrabold text-blue-600 mt-1 uppercase">${t.staging}</span>
+                                <span class="text-[9px] font-bold text-slate-500 mt-0.5 line-clamp-1"><i class="fa-solid fa-user-tie"></i> ${t.leaderName}</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[9px] uppercase font-bold text-slate-400">SMO & Ritase</span>
+                                <span class="text-xs font-black text-blue-700 mt-1">${t.jmo || '-'}</span>
+                                <span class="text-[10px] font-bold text-slate-500 mt-1">Ritase Ke-${t.rit}</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[9px] uppercase font-bold text-slate-400">Armada, Nopol & Jam</span>
+                                <span class="text-xs font-bold text-slate-800 mt-1">${t.unit} <span class="uppercase text-slate-500">(${t.nopol})</span></span>
+                                <span class="text-[10px] font-bold text-orange-600 mt-1"><i class="fa-regular fa-clock"></i> ${t.jamMulai} - ${t.jamSelesai}</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[9px] uppercase font-bold text-slate-400">Petugas Pengantar</span>
+                                <span class="text-[11px] font-bold text-slate-700 mt-1"><span class="text-slate-400 font-medium">Drv:</span> ${t.driver}</span>
+                                <span class="text-[11px] font-bold text-slate-700 mt-0.5"><span class="text-slate-400 font-medium">Ast:</span> ${t.asisten || '-'}</span>
+                            </div>
                         </div>
-                        <!-- Info Rute Tengah -->
-                        <div class="flex flex-col gap-1 xl:w-1/3 border-t xl:border-t-0 xl:border-l border-slate-100 pt-3 xl:pt-0 xl:pl-4">
-                            <p class="text-xs font-extrabold text-slate-800">${t.unit} <span class="uppercase">(${t.nopol})</span> <span class="text-blue-600 text-[9px] uppercase tracking-wider ml-1 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">Rit ${t.rit}</span></p>
-                            <p class="text-[11px] text-slate-500 mt-0.5 font-medium line-clamp-1">Drv: ${t.driver} | Ast: ${t.asisten}</p>
-                            <p class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded self-start mt-1 uppercase tracking-wider"><i class="fa-solid fa-clock"></i> ${t.jamMulai} - ${t.jamSelesai} (${t.durasi})</p>
-                        </div>
-                        <!-- Stats Area -->
-                        <div class="grid grid-cols-4 gap-2 xl:w-1/4 border-t xl:border-t-0 xl:border-l border-slate-100 pt-3 xl:pt-0 xl:pl-4">
-                            <div class="text-center bg-slate-50 rounded-lg py-1.5"><p class="text-[9px] uppercase font-bold text-slate-400">Total</p><p class="font-black text-slate-700 mt-0.5 leading-none">${t.total}</p></div>
-                            <div class="text-center bg-emerald-50 rounded-lg py-1.5"><p class="text-[9px] uppercase font-bold text-emerald-500">Sukses</p><p class="font-black text-emerald-600 mt-0.5 leading-none">${t.sukses}</p></div>
-                            <div class="text-center bg-red-50 rounded-lg py-1.5"><p class="text-[9px] uppercase font-bold text-red-500">Gagal</p><p class="font-black text-red-600 mt-0.5 leading-none">${t.gagal}</p></div>
-                            <div class="text-center bg-yellow-50 rounded-lg py-1.5"><p class="text-[9px] uppercase font-bold text-yellow-600">F.M</p><p class="font-black text-yellow-600 mt-0.5 leading-none">${t.force_majeure || 0}</p></div>
-                        </div>
-                        <!-- Actions -->
-                        <div class="flex items-center gap-2 xl:w-auto border-t xl:border-t-0 xl:border-l border-slate-100 pt-3 xl:pt-0 xl:pl-4 justify-between">
-                            ${actionsHtml}
+
+                        <!-- Baris 2: Statistik & Aksi -->
+                        <div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
+                            <div class="grid grid-cols-4 gap-2 w-full md:w-1/2 lg:w-[40%]">
+                                <div class="text-center bg-slate-50 rounded-lg py-1.5"><p class="text-[9px] uppercase font-bold text-slate-400">Total</p><p class="font-black text-slate-700 mt-0.5 leading-none">${t.total}</p></div>
+                                <div class="text-center bg-emerald-50 rounded-lg py-1.5"><p class="text-[9px] uppercase font-bold text-emerald-500">Sukses</p><p class="font-black text-emerald-600 mt-0.5 leading-none">${t.sukses}</p></div>
+                                <div class="text-center bg-red-50 rounded-lg py-1.5"><p class="text-[9px] uppercase font-bold text-red-500">Gagal</p><p class="font-black text-red-600 mt-0.5 leading-none">${t.gagal}</p></div>
+                                <div class="text-center bg-yellow-50 rounded-lg py-1.5"><p class="text-[9px] uppercase font-bold text-yellow-600">F.M</p><p class="font-black text-yellow-600 mt-0.5 leading-none">${t.force_majeure || 0}</p></div>
+                            </div>
+                            <div class="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
+                                ${actionsHtml}
+                            </div>
                         </div>
                     `;
                     container.appendChild(div);
@@ -2100,7 +2183,7 @@
                 options: { 
                     responsive: true, maintainAspectRatio: false,
                     scales: { y: { display: false, grid: { display: false } }, x: { grid: { display: false }, border: { display: false }, ticks: { font: {family: 'Plus Jakarta Sans', size: 10, weight: 'bold'} } } },
-                    plugins: { datalabels: { display: true, align: 'top', color: function(ctx) { return ctx.dataset.label === 'Sukses' ? '#10b981' : '#ef4444'; }, font: { weight: '900', family: 'Plus Jakarta Sans' }, formatter: function(val) { return val > 0 ? val : ''; } } },
+                    plugins: { legend: { display: false }, datalabels: { display: true, align: 'top', color: function(ctx) { return ctx.dataset.label === 'Sukses' ? '#10b981' : '#ef4444'; }, font: { weight: '900', family: 'Plus Jakarta Sans' }, formatter: function(val) { return val > 0 ? val : ''; } } },
                     layout: { padding: { top: 20 } }
                 }
             });
@@ -2184,16 +2267,39 @@
             const endStr = document.getElementById('filter-date-end').value;
             if(dashboardTrips.length === 0) { showToast("Tidak ada data untuk diunduh.", "error"); return; }
 
-            let csv = "Tanggal,Waktu Submit,Leader,Staging,Unit,Nopol,Driver,Asisten,Ritase,Jam Mulai,Jam Selesai,Durasi,Total Paket,Sukses,Gagal,F_Majeure\n";
+            // Header kolom persis sesuai permintaan agar rapi dan ringkas
+            let csv = "Tanggal,SMO,Ritase,Armada,Driver,Asisten,Resi Sukses,Resi Gagal,Resi F.M\n";
+            
             dashboardTrips.forEach(d => {
-                const timeStr = new Date(d.timestamp).toLocaleTimeString('id-ID');
-                const row = [ d.date, timeStr, `"${d.leaderName}"`, d.staging, d.unit, d.nopol, `"${d.driver}"`, `"${d.asisten}"`, d.rit, d.jamMulai, d.jamSelesai, d.durasi, d.total, d.sukses, d.gagal, d.force_majeure || 0 ];
+                // Format agar tidak pecah di Excel
+                const armadaStr = `"${d.unit} (${d.nopol})"`;
+                const driverStr = `"${d.driver}"`;
+                const asistenStr = `"${d.asisten || '-'}"`;
+                
+                // Kumpulkan resi dan satukan dalam 1 cell menggunakan \n (enter) di dalam tanda kutip ("")
+                const strSukses = d.detailSukses && d.detailSukses.length > 0 ? `"${d.detailSukses.join('\n')}"` : '"-"';
+                const strGagal = d.detailGagal && d.detailGagal.length > 0 ? `"${d.detailGagal.map(p => `${p.resi} - ${p.reason}`).join('\n')}"` : '"-"';
+                const strFM = d.detail_force_majeure && d.detail_force_majeure.length > 0 ? `"${d.detail_force_majeure.map(p => `${p.resi} - ${p.reason}`).join('\n')}"` : '"-"';
+
+                const row = [ 
+                    d.date, 
+                    d.jmo || '-', 
+                    d.rit, 
+                    armadaStr, 
+                    driverStr, 
+                    asistenStr, 
+                    strSukses, 
+                    strGagal, 
+                    strFM
+                ];
+                
                 csv += row.join(",") + "\n";
             });
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            // Gunakan \ufeff (Byte Order Mark) agar karakter khusus & enter terbaca rapi sebagai 1 Cell di Microsoft Excel
+            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-            link.download = `Laporan_Transport_${startStr}_sd_${endStr}.csv`;
+            link.download = `Tarikan_Data_BP_Aja_${startStr}_sd_${endStr}.csv`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
             showToast("Berhasil mengunduh Laporan CSV", "success");
         };
